@@ -11,23 +11,11 @@
 #define TROYESTUFF	1
 //#define DO_LOG	1
 
-#define DIRECT3D_VERSION	0x0500
-#define DIRECTSOUND_VERSION	0x0900
-#define DIRECTINPUT_VERSION 0x0800
-
-#include <windows.h>
-#if (DIRECT3D_VERSION >= 0x900)
-#include <d3d9.h>
-#else
-#include <d3d.h>
-#endif
+#include <GL/gl.h>
+#include <GL/glu.h>
 #include <cmath>
-#include <stdio.h>
-#include <dinput.h>
-#include <dsound.h>
-#include <mmreg.h>
-#include <mmeapi.h>
+#include <cstdio>
 #include <ctime>
-#include <MSAcm.h>
+#include <SDL2/SDL.h>
 
 #endif //PCH_H

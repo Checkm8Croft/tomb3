@@ -59,7 +59,7 @@ static void T3_InitSettings()
 {
 	Option_Music_Volume = 7;
 	Option_SFX_Volume = 10;
-	App.Windowed = 0;
+	App.windowed = 0;
 
 	tomb3.footprints = 1;
 	tomb3.pickup_display = 1;
@@ -100,170 +100,133 @@ static void T3_InitSettings()
 
 void T3_SaveSettings()
 {
-	OpenRegistry(SUB_KEY);
+    OpenConfig();
 
-#if (DIRECT3D_VERSION < 0x900)
-	if (App.lpDeviceInfo->nDDInfo)
-		REG_WriteLong((char*)"DD", App.lpDXConfig->nDD);
-#endif
+    CFG_WriteLong("VM", App.glConfig.nVMode);
+    CFG_WriteLong("zbuffer", App.glConfig.bZBuffer);
+    CFG_WriteLong("dither", App.glConfig.Dither);
+    CFG_WriteLong("filter", App.glConfig.Filter);
+    CFG_WriteLong("sound", App.glConfig.sound);
+    CFG_WriteLong("SFXVolume", Option_SFX_Volume);
+    CFG_WriteLong("MusicVolume", Option_Music_Volume);
+    CFG_WriteBool("Window", App.windowed);
+    CFG_WriteLong("WindowX", App.rScreen.left);
+    CFG_WriteLong("WindowY", App.rScreen.top);
+    CFG_WriteFloat("Gamma", GammaOption);
+    // CFG_WriteBlock("keyLayout", &layout[1][0], sizeof(layout) / 2); // Implementa se serve
 
-#if (DIRECT3D_VERSION >= 0x900)
-	if (App.lpDeviceInfo->nD3DInfo)
-#else
-	if (App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].nD3DInfo)
-#endif
-	{
-		REG_WriteLong((char*)"D3D", App.lpDXConfig->nD3D);
-#if (DIRECT3D_VERSION < 0x900)
-		REG_WriteLong((char*)"D3DTF", App.lpDXConfig->D3DTF);
-#endif
-	}
+    // Nuove opzioni
+    CFG_WriteBool("footprints", tomb3.footprints);
+    CFG_WriteBool("pickup_display", tomb3.pickup_display);
+    CFG_WriteBool("improved_rain", tomb3.improved_rain);
+    CFG_WriteBool("improved_lasers", tomb3.improved_lasers);
+    CFG_WriteBool("uwdust", tomb3.uwdust);
+    CFG_WriteBool("flexible_crawl", tomb3.flexible_crawl);
+    CFG_WriteBool("duck_roll", tomb3.duck_roll);
+    CFG_WriteBool("flexible_sprint", tomb3.flexible_sprint);
+    CFG_WriteBool("slide_to_run", tomb3.slide_to_run);
+    CFG_WriteBool("kayak_mist", tomb3.kayak_mist);
+    CFG_WriteBool("dozy", tomb3.dozy);
+    CFG_WriteBool("disable_gamma", tomb3.disable_gamma);
+    CFG_WriteBool("disable_ckey", tomb3.disable_ckey);
+    CFG_WriteBool("crawl_tilt", tomb3.crawl_tilt);
+    CFG_WriteBool("improved_poison_bar", tomb3.improved_poison_bar);
+    CFG_WriteBool("custom_water_color", tomb3.custom_water_color);
+    CFG_WriteBool("psx_text_colors", tomb3.psx_text_colors);
+    CFG_WriteBool("upv_wake", tomb3.upv_wake);
+    CFG_WriteBool("psx_fov", tomb3.psx_fov);
+    CFG_WriteBool("psx_boxes", tomb3.psx_boxes);
+    CFG_WriteBool("psx_mono", tomb3.psx_mono);
 
-	if (App.lpDeviceInfo->nDSInfo)
-		REG_WriteLong((char*)"DS", App.lpDXConfig->nDS);
+    if (!tomb3.gold)
+        CFG_WriteBool("psx_saving", tomb3.psx_saving);
 
-	REG_WriteLong((char*)"VM", App.lpDXConfig->nVMode);
-	REG_WriteLong((char*)"zbuffer", App.lpDXConfig->bZBuffer);
-	REG_WriteLong((char*)"dither", App.lpDXConfig->Dither);
-	REG_WriteLong((char*)"filter", App.lpDXConfig->Filter);
-	REG_WriteLong((char*)"sound", App.lpDXConfig->sound);
-	REG_WriteLong((char*)"SFXVolume", Option_SFX_Volume);
-	REG_WriteLong((char*)"MusicVolume", Option_Music_Volume);
-	REG_WriteBool((char*)"Window", App.Windowed);
-	REG_WriteLong((char*)"WindowX", App.rScreen.left);
-	REG_WriteLong((char*)"WindowY", App.rScreen.top);
-	REG_WriteFloat((char*)"Gamma", GammaOption);
-	REG_WriteBlock((char*)"keyLayout", &layout[1][0], sizeof(layout) / 2);
+    CFG_WriteBool("psx_crystal_sfx", tomb3.psx_crystal_sfx);
+    CFG_WriteBool("blue_crystal_light", tomb3.blue_crystal_light);
+    CFG_WriteBool("improved_electricity", tomb3.improved_electricity);
+    CFG_WriteBool("psx_contrast", tomb3.psx_contrast);
+    CFG_WriteLong("shadow_mode", tomb3.shadow_mode);
+    CFG_WriteLong("bar_mode", tomb3.bar_mode);
+    CFG_WriteLong("sophia_rings", tomb3.sophia_rings);
+    CFG_WriteLong("bar_pos", tomb3.bar_pos);
+    CFG_WriteLong("ammo_counter", tomb3.ammo_counter);
+    CFG_WriteFloat("GUI_Scale", tomb3.GUI_Scale);
+    CFG_WriteFloat("INV_Scale", tomb3.INV_Scale);
+    CFG_WriteFloat("unwater_music_mute", tomb3.unwater_music_mute);
+    CFG_WriteFloat("inv_music_mute", tomb3.inv_music_mute);
 
-	//new settings :)
-	REG_WriteBool((char*)"footprints", tomb3.footprints);
-	REG_WriteBool((char*)"pickup_display", tomb3.pickup_display);
-	REG_WriteBool((char*)"improved_rain", tomb3.improved_rain);
-	REG_WriteBool((char*)"improved_lasers", tomb3.improved_lasers);
-	REG_WriteBool((char*)"uwdust", tomb3.uwdust);
-	REG_WriteBool((char*)"flexible_crawl", tomb3.flexible_crawl);
-	REG_WriteBool((char*)"duck_roll", tomb3.duck_roll);
-	REG_WriteBool((char*)"flexible_sprint", tomb3.flexible_sprint);
-	REG_WriteBool((char*)"slide_to_run", tomb3.slide_to_run);
-	REG_WriteBool((char*)"kayak_mist", tomb3.kayak_mist);
-	REG_WriteBool((char*)"dozy", tomb3.dozy);
-	REG_WriteBool((char*)"disable_gamma", tomb3.disable_gamma);
-	REG_WriteBool((char*)"disable_ckey", tomb3.disable_ckey);
-	REG_WriteBool((char*)"crawl_tilt", tomb3.crawl_tilt);
-	REG_WriteBool((char*)"improved_poison_bar", tomb3.improved_poison_bar);
-	REG_WriteBool((char*)"custom_water_color", tomb3.custom_water_color);
-	REG_WriteBool((char*)"psx_text_colors", tomb3.psx_text_colors);
-	REG_WriteBool((char*)"upv_wake", tomb3.upv_wake);
-	REG_WriteBool((char*)"psx_fov", tomb3.psx_fov);
-	REG_WriteBool((char*)"psx_boxes", tomb3.psx_boxes);
-	REG_WriteBool((char*)"psx_mono", tomb3.psx_mono);
-
-	if (!tomb3.gold)
-		REG_WriteBool((char*)"psx_saving", tomb3.psx_saving);
-
-	REG_WriteBool((char*)"psx_crystal_sfx", tomb3.psx_crystal_sfx);
-	REG_WriteBool((char*)"blue_crystal_light", tomb3.blue_crystal_light);
-	REG_WriteBool((char*)"improved_electricity", tomb3.improved_electricity);
-	REG_WriteBool((char*)"psx_contrast", tomb3.psx_contrast);
-	REG_WriteLong((char*)"shadow_mode", tomb3.shadow_mode);
-	REG_WriteLong((char*)"bar_mode", tomb3.bar_mode);
-	REG_WriteLong((char*)"sophia_rings", tomb3.sophia_rings);
-	REG_WriteLong((char*)"bar_pos", tomb3.bar_pos);
-	REG_WriteLong((char*)"ammo_counter", tomb3.ammo_counter);
-	REG_WriteFloat((char*)"GUI_Scale", tomb3.GUI_Scale);
-	REG_WriteFloat((char*)"INV_Scale", tomb3.INV_Scale);
-	REG_WriteFloat((char*)"unwater_music_mute", tomb3.unwater_music_mute);
-	REG_WriteFloat((char*)"inv_music_mute", tomb3.inv_music_mute);
-
-	CloseRegistry();
+    CloseConfig();
 }
 
 bool T3_LoadSettings()
 {
-	if (!OpenRegistry(SUB_KEY))
-	{
-		T3_InitSettings();
-		return 0;
-	}
+    if (!OpenConfig())
+    {
+        T3_InitSettings();
+        return false;
+    }
 
-#if (DIRECT3D_VERSION < 0x900)
-	if (App.lpDeviceInfo->nDDInfo)
-		REG_ReadLong((char*)"DD", (ulong&)App.lpDXConfig->nDD, 0);
-#endif
+    ulong tmp;
+    CFG_ReadLong("VM", tmp, 0); App.glConfig.nVMode = (long)tmp;
+    CFG_ReadLong("zbuffer", tmp, 0); App.glConfig.bZBuffer = (long)tmp;
+    CFG_ReadLong("dither", tmp, 0); App.glConfig.Dither = (long)tmp;
+    CFG_ReadLong("filter", tmp, 0); App.glConfig.Filter = (long)tmp;
+    CFG_ReadLong("sound", tmp, 0); App.glConfig.sound = (long)tmp;
+    CFG_ReadLong("SFXVolume", tmp, 0); Option_SFX_Volume = (short)tmp;
+    CFG_ReadLong("MusicVolume", tmp, 0); Option_Music_Volume = (short)tmp;
+    CFG_ReadBool("Window", App.windowed, 0);
+    CFG_ReadLong("WindowX", tmp, 0); App.rScreen.left = (int)tmp;
+    CFG_ReadLong("WindowY", tmp, 0); App.rScreen.top = (int)tmp;
+    CFG_ReadFloat("Gamma", GammaOption, 0);
 
-#if (DIRECT3D_VERSION >= 0x900)
-	if (App.lpDeviceInfo->nD3DInfo)
-#else
-	if (App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].nD3DInfo)
-#endif
-	{
-		REG_ReadLong((char*)"D3D", (ulong&)App.lpDXConfig->nD3D, 0);
-#if (DIRECT3D_VERSION < 0x900)
-		REG_ReadLong((char*)"D3DTF", (ulong&)App.lpDXConfig->D3DTF, 0);
-#endif
-	}
+    // CFG_ReadBlock("keyLayout", &layout[1][0], sizeof(layout) / 2, 0); // Implementa se serve
+    DefaultConflict();
 
-	if (App.lpDeviceInfo->nDSInfo)
-		REG_ReadLong((char*)"DS", (ulong&)App.lpDXConfig->nDS, 0);
+    CFG_ReadBool("footprints", tomb3.footprints, 1);
+    CFG_ReadBool("pickup_display", tomb3.pickup_display, 1);
+    CFG_ReadBool("improved_rain", tomb3.improved_rain, 1);
+    CFG_ReadBool("improved_lasers", tomb3.improved_lasers, 1);
+    CFG_ReadBool("uwdust", tomb3.uwdust, 1);
+    CFG_ReadBool("flexible_crawl", tomb3.flexible_crawl, 1);
+    CFG_ReadBool("duck_roll", tomb3.duck_roll, 1);
+    CFG_ReadBool("flexible_sprint", tomb3.flexible_sprint, 1);
+    CFG_ReadBool("slide_to_run", tomb3.slide_to_run, 1);
+    CFG_ReadBool("kayak_mist", tomb3.kayak_mist, 1);
+    CFG_ReadBool("dozy", tomb3.dozy, 0);
+    CFG_ReadBool("disable_gamma", tomb3.disable_gamma, 1);
+    CFG_ReadBool("disable_ckey", tomb3.disable_ckey, 0);
+    CFG_ReadBool("crawl_tilt", tomb3.crawl_tilt, 1);
+    CFG_ReadBool("improved_poison_bar", tomb3.improved_poison_bar, 1);
+    CFG_ReadBool("custom_water_color", tomb3.custom_water_color, 1);
+    CFG_ReadBool("psx_text_colors", tomb3.psx_text_colors, 0);
+    CFG_ReadBool("upv_wake", tomb3.upv_wake, 1);
+    CFG_ReadBool("psx_fov", tomb3.psx_fov, 0);
+    CFG_ReadBool("psx_boxes", tomb3.psx_boxes, 0);
+    CFG_ReadBool("psx_mono", tomb3.psx_mono, 0);
 
-	REG_ReadLong((char*)"VM", (ulong&)App.lpDXConfig->nVMode, 0);
-	REG_ReadLong((char*)"zbuffer", (ulong&)App.lpDXConfig->bZBuffer, 0);
-	REG_ReadLong((char*)"dither", (ulong&)App.lpDXConfig->Dither, 0);
-	REG_ReadLong((char*)"filter", (ulong&)App.lpDXConfig->Filter, 0);
-	REG_ReadLong((char*)"sound", (ulong&)App.lpDXConfig->sound, 0);
-	REG_ReadLong((char*)"SFXVolume", (ulong&)Option_SFX_Volume, 0);
-	REG_ReadLong((char*)"MusicVolume", (ulong&)Option_Music_Volume, 0);
-	REG_ReadBool((char*)"Window", App.Windowed, 0);
-	REG_ReadLong((char*)"WindowX", (ulong&)App.rScreen.left, 0);
-	REG_ReadLong((char*)"WindowY", (ulong&)App.rScreen.top, 0);
-	REG_ReadFloat((char*)"Gamma", GammaOption, 0);
+    if (tomb3.gold)
+        tomb3.psx_saving = 0;
+    else
+        CFG_ReadBool("psx_saving", tomb3.psx_saving, 0);
 
-	REG_ReadBlock((char*)"keyLayout", &layout[1][0], sizeof(layout) / 2, 0);
-	DefaultConflict();	//fix having to open the control options to set conflicts;
+    CFG_ReadBool("psx_crystal_sfx", tomb3.psx_crystal_sfx, 0);
+    CFG_ReadBool("blue_crystal_light", tomb3.blue_crystal_light, 0);
+    CFG_ReadBool("improved_electricity", tomb3.improved_electricity, 1);
+    CFG_ReadBool("psx_contrast", tomb3.psx_contrast, 0);
 
-	REG_ReadBool((char*)"footprints", tomb3.footprints, 1);
-	REG_ReadBool((char*)"pickup_display", tomb3.pickup_display, 1);
-	REG_ReadBool((char*)"improved_rain", tomb3.improved_rain, 1);
-	REG_ReadBool((char*)"improved_lasers", tomb3.improved_lasers, 1);
-	REG_ReadBool((char*)"uwdust", tomb3.uwdust, 1);
-	REG_ReadBool((char*)"flexible_crawl", tomb3.flexible_crawl, 1);
-	REG_ReadBool((char*)"duck_roll", tomb3.duck_roll, 1);
-	REG_ReadBool((char*)"flexible_sprint", tomb3.flexible_sprint, 1);
-	REG_ReadBool((char*)"slide_to_run", tomb3.slide_to_run, 1);
-	REG_ReadBool((char*)"kayak_mist", tomb3.kayak_mist, 1);
-	REG_ReadBool((char*)"dozy", tomb3.dozy, 0);
-	REG_ReadBool((char*)"disable_gamma", tomb3.disable_gamma, 1);
-	REG_ReadBool((char*)"disable_ckey", tomb3.disable_ckey, 0);
-	REG_ReadBool((char*)"crawl_tilt", tomb3.crawl_tilt, 1);
-	REG_ReadBool((char*)"improved_poison_bar", tomb3.improved_poison_bar, 1);
-	REG_ReadBool((char*)"custom_water_color", tomb3.custom_water_color, 1);
-	REG_ReadBool((char*)"psx_text_colors", tomb3.psx_text_colors, 0);
-	REG_ReadBool((char*)"upv_wake", tomb3.upv_wake, 1);
-	REG_ReadBool((char*)"psx_fov", tomb3.psx_fov, 0);
-	REG_ReadBool((char*)"psx_boxes", tomb3.psx_boxes, 0);
-	REG_ReadBool((char*)"psx_mono", tomb3.psx_mono, 0);
+    CFG_ReadLong("shadow_mode", tmp, SHADOW_PSX); tomb3.shadow_mode = (long)tmp;
+    CFG_ReadLong("bar_mode", tmp, BAR_PSX); tomb3.bar_mode = (long)tmp;
+    CFG_ReadLong("sophia_rings", tmp, SRINGS_PSX); tomb3.sophia_rings = (long)tmp;
+    CFG_ReadLong("bar_pos", tmp, BPOS_ORIGINAL); tomb3.bar_pos = (long)tmp;
+    CFG_ReadLong("ammo_counter", tmp, ACTR_PC); tomb3.ammo_counter = (long)tmp;
 
-	if (tomb3.gold)
-		tomb3.psx_saving = 0;
-	else
-		REG_ReadBool((char*)"psx_saving", tomb3.psx_saving, 0);
+    CFG_ReadFloat("GUI_Scale", tomb3.GUI_Scale, 1.0F);
+    CFG_ReadFloat("INV_Scale", tomb3.INV_Scale, 1.0F);
+    CFG_ReadFloat("unwater_music_mute", tomb3.unwater_music_mute, 0.8F);
+    CFG_ReadFloat("inv_music_mute", tomb3.inv_music_mute, 0.8F);
 
-	REG_ReadBool((char*)"psx_crystal_sfx", tomb3.psx_crystal_sfx, 0);
-	REG_ReadBool((char*)"blue_crystal_light", tomb3.blue_crystal_light, 0);
-	REG_ReadBool((char*)"improved_electricity", tomb3.improved_electricity, 1);
-	REG_ReadBool((char*)"psx_contrast", tomb3.psx_contrast, 0);
-	REG_ReadLong((char*)"shadow_mode", (ulong&)tomb3.shadow_mode, SHADOW_PSX);
-	REG_ReadLong((char*)"bar_mode", (ulong&)tomb3.bar_mode, BAR_PSX);
-	REG_ReadLong((char*)"sophia_rings", (ulong&)tomb3.sophia_rings, SRINGS_PSX);
-	REG_ReadLong((char*)"bar_pos", (ulong&)tomb3.bar_pos, BPOS_ORIGINAL);
-	REG_ReadLong((char*)"ammo_counter", (ulong&)tomb3.ammo_counter, ACTR_PC);
-	REG_ReadFloat((char*)"GUI_Scale", tomb3.GUI_Scale, 1.0F);
-	REG_ReadFloat((char*)"INV_Scale", tomb3.INV_Scale, 1.0F);
-	REG_ReadFloat((char*)"unwater_music_mute", tomb3.unwater_music_mute, 0.8F);
-	REG_ReadFloat((char*)"inv_music_mute", tomb3.inv_music_mute, 0.8F);
-
-	CloseRegistry();
-	return 1;
+    CloseConfig();
+    return true;
 }
 
 void T3_GoldifyString(char* string)

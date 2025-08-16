@@ -1,7 +1,7 @@
 #pragma once
 #include "math_tbls.h"
+#include <GL/gl.h> // Per GLuint
 
-/*typedefs*/
 typedef unsigned char uchar;
 typedef unsigned short ushort;
 typedef unsigned long ulong;
@@ -22,53 +22,21 @@ typedef unsigned long ulong;
 #define SPR_BLEND_ADD		0x20000000
 #define SPR_BLEND_SUB		0x40000000
 
-/********************DX defs********************/
-#if (DIRECT3D_VERSION >= 0x900)
-#define LPDIRECT3DX				LPDIRECT3D9
-#define LPDIRECT3DDEVICEX		LPDIRECT3DDEVICE9
-#define LPDIRECTDRAWSURFACEX	LPDIRECT3DSURFACE9
-#define TEXHANDLE				LPDIRECT3DTEXTURE9
-#define DDSURFACEDESCX			D3DLOCKED_RECT
-#define LPDIRECT3DTEXTUREX		LPDIRECT3DTEXTURE9
-#define VTXBUF_LEN				512
-#define D3DFVF_TLVERTEX			(D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_SPECULAR | D3DFVF_TEX1)
-#define RGBA_SETALPHA(rgba, x)	(((x) << 24) | ((rgba) & 0x00ffffff))
-#define RGBA_GETALPHA(rgb)		((rgb) >> 24)
-#define RGBA_GETRED(rgb)		(((rgb) >> 16) & 0xff)
-#define RGBA_GETGREEN(rgb)		(((rgb) >> 8) & 0xff)
-#define RGBA_GETBLUE(rgb)		((rgb) & 0xff)
-#define RGBA_MAKE(r, g, b, a)	((D3DCOLOR) (((a) << 24) | ((r) << 16) | ((g) << 8) | (b)))
-#define RGB_GETRED(rgb)			(((rgb) >> 16) & 0xff)
-#define RGB_GETGREEN(rgb)		(((rgb) >> 8) & 0xff)
-#define RGB_GETBLUE(rgb)		((rgb) & 0xff)
-#define RGB_MAKE(r, g, b)		((D3DCOLOR) (((r) << 16) | ((g) << 8) | (b)))
-#else
-#define LPDIRECT3DX				LPDIRECT3D2
-#define LPDIRECT3DDEVICEX		LPDIRECT3DDEVICE2
-#define LPDIRECTDRAWSURFACEX	LPDIRECTDRAWSURFACE3
-#define TEXHANDLE				D3DTEXTUREHANDLE
-#define DDSURFACEDESCX			DDSURFACEDESC
-#define LPDIRECT3DTEXTUREX		LPDIRECT3DTEXTURE2
-#define LPDIRECTDRAWX			LPDIRECTDRAW2
-#define LPDIRECT3DVIEWPORTX		LPDIRECT3DVIEWPORT2
-#define D3DMATERIALX			D3DMATERIAL
-#define LPDIRECT3DMATERIALX		LPDIRECT3DMATERIAL2
-#endif
+// ========= OpenGL Defines =========
+#define TEXHANDLE               GLuint
+#define VTXBUF_LEN              512
 
-#define LPDDSURFACEDESCX		DDSURFACEDESCX*
-#define DDSCAPSX				DDSCAPS
-#define LPDDSCAPSX				DDSCAPSX*
-#define LPDIRECTINPUTX			LPDIRECTINPUT8
-#define LPDIRECTINPUTDEVICEX	LPDIRECTINPUTDEVICE8
+#define RGBA_SETALPHA(rgba, x)  (((x) << 24) | ((rgba) & 0x00ffffff))
+#define RGBA_GETALPHA(rgb)      ((rgb) >> 24)
+#define RGBA_GETRED(rgb)        (((rgb) >> 16) & 0xff)
+#define RGBA_GETGREEN(rgb)      (((rgb) >> 8) & 0xff)
+#define RGBA_GETBLUE(rgb)       ((rgb) & 0xff)
+#define RGBA_MAKE(r, g, b, a)   ((uint32_t)(((a) << 24) | ((r) << 16) | ((g) << 8) | (b)))
+#define RGB_GETRED(rgb)         (((rgb) >> 16) & 0xff)
+#define RGB_GETGREEN(rgb)       (((rgb) >> 8) & 0xff)
+#define RGB_GETBLUE(rgb)        ((rgb) & 0xff)
+#define RGB_MAKE(r, g, b)       ((uint32_t)(((r) << 16) | ((g) << 8) | (b)))
 
-#if (DIRECT3D_VERSION < 0x900)
-#define DDSGUID					IID_IDirectDrawSurface3
-#define DDGUID					IID_IDirectDraw2
-#define D3DGUID					IID_IDirect3D2
-#define D3DTEXGUID				IID_IDirect3DTexture2
-#endif
-#define DIGUID					IID_IDirectInput8
-#define DSNGUID					IID_IDirectSoundNotify
 /***********************************************/
 
 //constants
@@ -1298,29 +1266,19 @@ struct VERTEX_INFO
 
 struct DISPLAYMODE
 {
-	long w;
-	long h;
-	ulong bpp;
-#if (DIRECT3D_VERSION < 0x900)
-	bool bPalette;
-	uchar rbpp;
-	uchar gbpp;
-	uchar bbpp;
-	uchar abpp;
-	DDSURFACEDESCX ddsd;
-	uchar rshift;
-	uchar gshift;
-	uchar bshift;
-	uchar ashift;
-#endif
+    long w;
+    long h;
+    ulong bpp;
+    // OpenGL non usa palette o shift, quindi rimuovi i campi DirectX
 };
-
-struct DXDIRECTSOUNDINFO
+struct GLCONFIG
 {
-	char Name[256];
-	char About[256];
-	LPGUID lpGuid;
-	GUID Guid;
+    long nGL;
+    long nVMode;
+    long bZBuffer;
+    long Dither;
+    long Filter;
+    long sound;
 };
 
 #if (DIRECT3D_VERSION >= 0x900)
@@ -1345,58 +1303,23 @@ struct DEVICEINFO
 	//Joystick enumeration stuff was here
 };
 #else
-struct D3DTEXTUREINFO
+struct GLTextureInfo
 {
-	ulong bpp;
-	bool bPalette;
-	bool bAlpha;
-	uchar rbpp;
-	uchar gbpp;
-	uchar bbpp;
-	uchar abpp;
-	DDSURFACEDESCX ddsd;
-	DDPIXELFORMAT ddpf;
-	uchar rshift;
-	uchar gshift;
-	uchar bshift;
-	uchar ashift;
+    ulong bpp;
+    bool hasAlpha;
+    uchar rbpp;
+    uchar gbpp;
+    uchar bbpp;
+    uchar abpp;
+    uchar rshift;
+    uchar gshift;
+    uchar bshift;
+    uchar ashift;
+    long width;
+    long height;
+    TEXHANDLE handle;
 };
 
-struct DIRECT3DINFO
-{
-	char Name[256];
-	char About[256];
-	LPGUID lpGuid;
-	GUID Guid;
-	D3DDEVICEDESC DeviceDesc;
-	bool bAlpha;
-	long nDisplayMode;
-	DISPLAYMODE* DisplayMode;
-	long nTexture;
-	D3DTEXTUREINFO* Texture;
-};
-
-struct DIRECTDRAWINFO
-{
-	char Name[256];
-	char About[256];
-	LPGUID lpGuid;
-	GUID Guid;
-	DDCAPS DDCaps;
-	long nDisplayMode;
-	DISPLAYMODE* DisplayMode;
-	long nD3DInfo;
-	DIRECT3DINFO* D3DInfo;
-};
-
-struct DEVICEINFO
-{
-	long nDDInfo;
-	DIRECTDRAWINFO* DDInfo;
-	long nDSInfo;
-	DXDIRECTSOUNDINFO* DSInfo;
-	//Joystick enumeration stuff was here
-};
 #endif
 
 struct DXCONFIG
@@ -1416,44 +1339,6 @@ struct DXCONFIG
 	long sound;
 };
 
-struct WINAPP
-{
-	WNDCLASS WindowClass;
-	HWND WindowHandle;
-	HINSTANCE hInstance;
-	DEVICEINFO DeviceInfo;
-	DXCONFIG DXConfig;
-	DEVICEINFO* lpDeviceInfo;
-	DXCONFIG* lpDXConfig;
-#if (DIRECT3D_VERSION >= 0x900)
-	LPDIRECT3DX D3D;
-	LPDIRECT3DDEVICEX D3DDev;
-	LPDIRECT3DVERTEXBUFFER9 DestVB;
-	LPDIRECTDRAWSURFACEX CaptureBuffer;
-	LPDIRECTDRAWSURFACEX PictureBuffer;
-#else
-	LPDIRECTDRAWX DDraw;
-	LPDIRECT3DX D3D;
-	LPDIRECT3DDEVICEX D3DDev;
-	LPDIRECTDRAWSURFACEX FrontBuffer;
-	LPDIRECTDRAWSURFACEX BackBuffer;
-	LPDIRECTDRAWSURFACEX ZBuffer;
-	LPDIRECTDRAWSURFACEX PictureBuffer;
-	LPDIRECT3DVIEWPORTX D3DView;
-	LPDIRECT3DMATERIALX D3DMaterial;
-#endif
-	RECT rScreen;
-	RECT rViewport;
-	ulong WindowStyle;
-	bool Windowed;
-	bool WinPlayLoaded;
-	volatile bool bFocus;
-	long nUVAdd;
-#if (DIRECT3D_VERSION < 0x900)
-	ulong nFrames;
-#endif
-	float fps;
-};
 
 struct LEADER_INFO
 {
@@ -1550,45 +1435,32 @@ struct SP_DYNAMIC
 	uchar Pad[2];
 };
 
-#if (DIRECT3D_VERSION >= 0x900)
-struct DXTEXTURE
+// Texture info per OpenGL
+struct GLTEXTUREINFO
 {
-	TEXHANDLE tex;
-	long nWidth;
-	long nHeight;
-	ulong dwFlags;
+    ulong bpp;
+    bool hasAlpha;
+    uchar rbpp;
+    uchar gbpp;
+    uchar bbpp;
+    uchar abpp;
+    uchar rshift;
+    uchar gshift;
+    uchar bshift;
+    uchar ashift;
+    long width;
+    long height;
+    TEXHANDLE handle;
 };
-#else
-struct TEXTURE
-{
-	LPVOID DXTex;	//DXTEXTURE*
-	LPDIRECTDRAWSURFACEX pSurf;
-	LPDIRECTDRAWPALETTE pPalette;
-	LPDIRECT3DTEXTUREX pTexture;
-	TEXHANDLE handle;
-	long num;
-	ulong nFrames;
-	ulong bpp;
-};
-
-struct DXTEXTURE
-{
-	LPDIRECTDRAWSURFACEX pSystemSurface;
-	LPDIRECTDRAWPALETTE pPalette;
-	long nWidth;
-	long nHeight;
-	ulong dwFlags;
-	ulong* pData;
-	TEXTURE* tex;
-	ulong bpp;
-};
-#endif
-
 struct TEXTUREBUCKET
 {
-	DXTEXTURE* TPage;
-	long nVtx;
-	D3DTLVERTEX vtx[BUCKET_VERTS];
+    GLTEXTUREINFO* TPage;
+    long nVtx;
+    struct {
+        float x, y, z;
+        float u, v;
+        ulong color;
+    } vtx[BUCKET_VERTS];
 };
 
 struct POINT_INFO
@@ -2221,4 +2093,55 @@ struct TOMB3_OPTIONS
 	float unwater_music_mute;
 	float inv_music_mute;
 };
+// --- INIZIO SOSTITUZIONE DX/GL ---
+
+// Informazioni sul display OpenGL
+struct GLDISPLAYINFO
+{
+    char Name[256];
+    char About[256];
+    ulong index;
+    long nDisplayMode;
+    DISPLAYMODE* DisplayMode;
+    long nTexture;
+    GLTEXTUREINFO* Texture;
+};
+
+// Configurazione hardware OpenGL
+struct GLDEVICEINFO
+{
+    long nDisplayInfo;
+    GLDISPLAYINFO* DisplayInfo;
+    // Puoi aggiungere qui eventuali info audio o joystick se servono
+};
+
+
+struct RECT {
+    int left;
+    int top;
+    int right;
+    int bottom;
+};
+// Informazioni sulla finestra cross-platform
+struct APPWINDOW
+{
+    // Se usi SDL:
+    // SDL_Window* window;
+    // Se usi GLFW:
+    // GLFWwindow* window;
+    int width;
+    int height;
+    bool windowed;
+    GLCONFIG glConfig;
+    GLDEVICEINFO* deviceInfo;
+    RECT rScreen;
+    RECT rViewport;
+    ulong windowStyle;
+    bool winPlayLoaded;
+    volatile bool hasFocus;
+    long nUVAdd;
+    float fps;
+};
+
+// --- FINE SOSTITUZIONE DX/GL ---
 #pragma pack(pop)

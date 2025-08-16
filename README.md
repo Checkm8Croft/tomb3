@@ -1,14 +1,20 @@
-# tomb3
-## PC Tomb Raider 3 decompilation project
+# tomb3 in gl
+## Tomb Raider 3 from DirectX to OpenGL porting project
 
-Inspired by [TR2Main](https://github.com/Arsunt/TR2Main/), made by Arsunt. 
+## Goal
+Porting the entire game from Windows and DirectX to all platforms in OpenGL and SDL
+Pull Requests are always welcome!
 
-from the makers of [TOMB5](https://github.com/Trxyebeep/TOMB5) and [TOMB4](https://github.com/Trxyebeep/TOMB4) The TR5/4 decompilation projects.
-
-### goals
-Preserving the original source code of the PC version of Tomb Raider 3.
+## Progress
+I currently modified:
+- Types.h (one of the main headers, so I could say that I have 1/3 of the work ready)
+- Pch.h
+- Registry.h
+- Tomb3.cpp
 
 ### Credits:
+Checkm8Croft: For porting the project
+
 Troye: Main decompilation effort, main developer.
 
 ChocolateFan: Additional decompilation and development.
