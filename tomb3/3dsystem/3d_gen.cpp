@@ -567,7 +567,7 @@ void phd_InitPolyList()
 	sort3dptrbf = sort3d_bufferbf;
 	info3dptrfb = info3d_bufferfb;
 	sort3dptrfb = sort3d_bufferfb;
-	CurrentTLVertex = VertexBuffer;
+	CurrentGLVertex = VertexBuffer;
 }
 
 void do_quickysorty(long left, long right, long* list)

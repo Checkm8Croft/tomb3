@@ -7,7 +7,12 @@
 #include "../specific/winmain.h"
 #include "../specific/hwrender.h"
 #include "../game/inventry.h"
-
+#if defined(__APPLE__)
+    #include <sys/types.h>
+    #include <sys/time.h>
+    #include <time.h>
+	#include <unistd.h>
+#endif
 TOMB3_OPTIONS tomb3;
 TOMB3_SAVE tomb3_save;
 ulong tomb3_save_size;
@@ -100,7 +105,7 @@ static void T3_InitSettings()
 
 void T3_SaveSettings()
 {
-    OpenConfig();
+    OpenConfig(CONFIG_FILE);
 
     CFG_WriteLong("VM", App.glConfig.nVMode);
     CFG_WriteLong("zbuffer", App.glConfig.bZBuffer);
@@ -160,70 +165,70 @@ void T3_SaveSettings()
 
 bool T3_LoadSettings()
 {
-    if (!OpenConfig())
+    if (!OpenConfig(CONFIG_FILE))
     {
         T3_InitSettings();
         return false;
     }
 
     ulong tmp;
-    CFG_ReadLong("VM", tmp, 0); App.glConfig.nVMode = (long)tmp;
-    CFG_ReadLong("zbuffer", tmp, 0); App.glConfig.bZBuffer = (long)tmp;
-    CFG_ReadLong("dither", tmp, 0); App.glConfig.Dither = (long)tmp;
-    CFG_ReadLong("filter", tmp, 0); App.glConfig.Filter = (long)tmp;
-    CFG_ReadLong("sound", tmp, 0); App.glConfig.sound = (long)tmp;
-    CFG_ReadLong("SFXVolume", tmp, 0); Option_SFX_Volume = (short)tmp;
-    CFG_ReadLong("MusicVolume", tmp, 0); Option_Music_Volume = (short)tmp;
-    CFG_ReadBool("Window", App.windowed, 0);
-    CFG_ReadLong("WindowX", tmp, 0); App.rScreen.left = (int)tmp;
-    CFG_ReadLong("WindowY", tmp, 0); App.rScreen.top = (int)tmp;
-    CFG_ReadFloat("Gamma", GammaOption, 0);
+    CFG_ReadLong("VM", &tmp, 0); App.glConfig.nVMode = (long)tmp;
+    CFG_ReadLong("zbuffer", &tmp, 0); App.glConfig.bZBuffer = (long)tmp;
+    CFG_ReadLong("dither", &tmp, 0); App.glConfig.Dither = (long)tmp;
+    CFG_ReadLong("filter", &tmp, 0); App.glConfig.Filter = (long)tmp;
+    CFG_ReadLong("sound", &tmp, 0); App.glConfig.sound = (long)tmp;
+    CFG_ReadLong("SFXVolume", &tmp, 0); Option_SFX_Volume = (short)tmp;
+    CFG_ReadLong("MusicVolume", &tmp, 0); Option_Music_Volume = (short)tmp;
+    CFG_ReadBool("Window", &App.windowed, 0);
+    CFG_ReadLong("WindowX", &tmp, 0); App.rScreen.left = (int)tmp;
+    CFG_ReadLong("WindowY", &tmp, 0); App.rScreen.top = (int)tmp;
+    CFG_ReadFloat("Gamma", &GammaOption, 0);
 
     // CFG_ReadBlock("keyLayout", &layout[1][0], sizeof(layout) / 2, 0); // Implementa se serve
     DefaultConflict();
 
-    CFG_ReadBool("footprints", tomb3.footprints, 1);
-    CFG_ReadBool("pickup_display", tomb3.pickup_display, 1);
-    CFG_ReadBool("improved_rain", tomb3.improved_rain, 1);
-    CFG_ReadBool("improved_lasers", tomb3.improved_lasers, 1);
-    CFG_ReadBool("uwdust", tomb3.uwdust, 1);
-    CFG_ReadBool("flexible_crawl", tomb3.flexible_crawl, 1);
-    CFG_ReadBool("duck_roll", tomb3.duck_roll, 1);
-    CFG_ReadBool("flexible_sprint", tomb3.flexible_sprint, 1);
-    CFG_ReadBool("slide_to_run", tomb3.slide_to_run, 1);
-    CFG_ReadBool("kayak_mist", tomb3.kayak_mist, 1);
-    CFG_ReadBool("dozy", tomb3.dozy, 0);
-    CFG_ReadBool("disable_gamma", tomb3.disable_gamma, 1);
-    CFG_ReadBool("disable_ckey", tomb3.disable_ckey, 0);
-    CFG_ReadBool("crawl_tilt", tomb3.crawl_tilt, 1);
-    CFG_ReadBool("improved_poison_bar", tomb3.improved_poison_bar, 1);
-    CFG_ReadBool("custom_water_color", tomb3.custom_water_color, 1);
-    CFG_ReadBool("psx_text_colors", tomb3.psx_text_colors, 0);
-    CFG_ReadBool("upv_wake", tomb3.upv_wake, 1);
-    CFG_ReadBool("psx_fov", tomb3.psx_fov, 0);
-    CFG_ReadBool("psx_boxes", tomb3.psx_boxes, 0);
-    CFG_ReadBool("psx_mono", tomb3.psx_mono, 0);
+    CFG_ReadBool("footprints", &tomb3.footprints, 1);
+    CFG_ReadBool("pickup_display", &tomb3.pickup_display, 1);
+    CFG_ReadBool("improved_rain", &tomb3.improved_rain, 1);
+    CFG_ReadBool("improved_lasers", &tomb3.improved_lasers, 1);
+    CFG_ReadBool("uwdust", &tomb3.uwdust, 1);
+    CFG_ReadBool("flexible_crawl", &tomb3.flexible_crawl, 1);
+    CFG_ReadBool("duck_roll", &tomb3.duck_roll, 1);
+    CFG_ReadBool("flexible_sprint", &tomb3.flexible_sprint, 1);
+    CFG_ReadBool("slide_to_run", &tomb3.slide_to_run, 1);
+    CFG_ReadBool("kayak_mist", &tomb3.kayak_mist, 1);
+    CFG_ReadBool("dozy", &tomb3.dozy, 0);
+    CFG_ReadBool("disable_gamma", &tomb3.disable_gamma, 1);
+    CFG_ReadBool("disable_ckey", &tomb3.disable_ckey, 0);
+    CFG_ReadBool("crawl_tilt", &tomb3.crawl_tilt, 1);
+    CFG_ReadBool("improved_poison_bar", &tomb3.improved_poison_bar, 1);
+    CFG_ReadBool("custom_water_color", &tomb3.custom_water_color, 1);
+    CFG_ReadBool("psx_text_colors", &tomb3.psx_text_colors, 0);
+    CFG_ReadBool("upv_wake", &tomb3.upv_wake, 1);
+    CFG_ReadBool("psx_fov", &tomb3.psx_fov, 0);
+    CFG_ReadBool("psx_boxes", &tomb3.psx_boxes, 0);
+    CFG_ReadBool("psx_mono", &tomb3.psx_mono, 0);
 
     if (tomb3.gold)
         tomb3.psx_saving = 0;
     else
-        CFG_ReadBool("psx_saving", tomb3.psx_saving, 0);
+        CFG_ReadBool("psx_saving", &tomb3.psx_saving, 0);
 
-    CFG_ReadBool("psx_crystal_sfx", tomb3.psx_crystal_sfx, 0);
-    CFG_ReadBool("blue_crystal_light", tomb3.blue_crystal_light, 0);
-    CFG_ReadBool("improved_electricity", tomb3.improved_electricity, 1);
-    CFG_ReadBool("psx_contrast", tomb3.psx_contrast, 0);
+    CFG_ReadBool("psx_crystal_sfx", &tomb3.psx_crystal_sfx, 0);
+    CFG_ReadBool("blue_crystal_light", &tomb3.blue_crystal_light, 0);
+    CFG_ReadBool("improved_electricity", &tomb3.improved_electricity, 1);
+    CFG_ReadBool("psx_contrast", &tomb3.psx_contrast, 0);
 
-    CFG_ReadLong("shadow_mode", tmp, SHADOW_PSX); tomb3.shadow_mode = (long)tmp;
-    CFG_ReadLong("bar_mode", tmp, BAR_PSX); tomb3.bar_mode = (long)tmp;
-    CFG_ReadLong("sophia_rings", tmp, SRINGS_PSX); tomb3.sophia_rings = (long)tmp;
-    CFG_ReadLong("bar_pos", tmp, BPOS_ORIGINAL); tomb3.bar_pos = (long)tmp;
-    CFG_ReadLong("ammo_counter", tmp, ACTR_PC); tomb3.ammo_counter = (long)tmp;
+    CFG_ReadLong("shadow_mode", &tmp, SHADOW_PSX); tomb3.shadow_mode = (long)tmp;
+    CFG_ReadLong("bar_mode", &tmp, BAR_PSX); tomb3.bar_mode = (long)tmp;
+    CFG_ReadLong("sophia_rings", &tmp, SRINGS_PSX); tomb3.sophia_rings = (long)tmp;
+    CFG_ReadLong("bar_pos", &tmp, BPOS_ORIGINAL); tomb3.bar_pos = (long)tmp;
+    CFG_ReadLong("ammo_counter", &tmp, ACTR_PC); tomb3.ammo_counter = (long)tmp;
 
-    CFG_ReadFloat("GUI_Scale", tomb3.GUI_Scale, 1.0F);
-    CFG_ReadFloat("INV_Scale", tomb3.INV_Scale, 1.0F);
-    CFG_ReadFloat("unwater_music_mute", tomb3.unwater_music_mute, 0.8F);
-    CFG_ReadFloat("inv_music_mute", tomb3.inv_music_mute, 0.8F);
+    CFG_ReadFloat("GUI_Scale", &tomb3.GUI_Scale, 1.0F);
+    CFG_ReadFloat("INV_Scale", &tomb3.INV_Scale, 1.0F);
+    CFG_ReadFloat("unwater_music_mute", &tomb3.unwater_music_mute, 0.8F);
+    CFG_ReadFloat("inv_music_mute", &tomb3.inv_music_mute, 0.8F);
 
     CloseConfig();
     return true;
@@ -262,4 +267,9 @@ void T3_GoldifyString(char* string)
 		strcpy(string, str);	//becomes datag
 		return;
 	}
+}
+
+int main(){
+    printf("tomb3 initialized");
+    return 0;
 }

@@ -1,6 +1,6 @@
 #pragma once
 #include "../global/types.h"
-
+#include "init.h"
 // Funzioni di rendering hardware OpenGL
 void HWR_EnableZBuffer(bool write, bool compare);
 void HWR_EnableAlphaBlend(bool enable);
@@ -10,13 +10,6 @@ void HWR_ResetZBuffer();
 void HWR_ResetCurrentTexture();
 void HWR_BeginScene();
 void HWR_EndScene();
-
-// Usa una struct vertex generica per OpenGL
-struct GLVERTEX {
-    float x, y, z;
-    float u, v;
-    ulong color;
-};
 
 void HWR_DrawRoutines(long nVtx, GLVERTEX* vtx, long nDrawType, long TPage);
 

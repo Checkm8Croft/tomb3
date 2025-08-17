@@ -8,7 +8,7 @@ void SetCullCW();
 void SetCullCCW();
 void InitUVTable();
 long visible_zclip(PHD_VBUF* v0, PHD_VBUF* v1, PHD_VBUF* v2);
-long FindBucket(DXTEXTURE* TPage);
+long FindBucket(GLTEXTUREINFO* TPage);
 void DrawBuckets();
 void SubdivideEdge(PHD_VBUF* v0, PHD_VBUF* v1, PHD_VBUF* dest);
 void SubdivideGT4(PHD_VBUF* v1, PHD_VBUF* v2, PHD_VBUF* v3, PHD_VBUF* v4, PHDTEXTURESTRUCT* pTex, sort_type nSortType, ushort double_sided, long num);

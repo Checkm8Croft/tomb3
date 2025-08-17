@@ -11,7 +11,20 @@
 #include "../game/control.h"
 #include "../tomb3/tomb3.h"
 #include "../game/gameflow.h"
+#include "../global/types.h"
+#include <GL/gl.h> // Assicurati che questa include sia presente
 
+void DrawGLTriangles(GLVERTEX* vtx, long nVtx)
+{
+    glBegin(GL_TRIANGLES);
+    for (long i = 0; i < nVtx; ++i)
+    {
+        glColor4ub((vtx[i].color >> 16) & 0xFF, (vtx[i].color >> 8) & 0xFF, vtx[i].color & 0xFF, (vtx[i].color >> 24) & 0xFF);
+        glTexCoord2f(vtx[i].tu, vtx[i].tv);
+        glVertex3f(vtx[i].sx, vtx[i].sy, vtx[i].sz);
+    }
+    glEnd();
+}
 static float UVTable[65536];
 static VERTEX_INFO v_buffer[MAX_VINFO];
 
@@ -29,10 +42,10 @@ static __inline bool CheckDrawType(long nDrawType)
 
 static bool SetBufferPtrs(long** sort, short** info, long nDrawType, bool pass)
 {
-	if (CurrentTLVertex - VertexBuffer > MAX_TLVERTICES - 32)
+	if (CurrentGLVertex - VertexBuffer > MAX_TLVERTICES - 32)
 		return 0;
 
-	if (!App.lpDXConfig->bZBuffer || !bAlphaTesting)
+    if (!App.windowed || !bAlphaTesting)
 	{
 		*sort = sort3dptrbf;
 		*info = info3dptrbf;
@@ -170,7 +183,7 @@ static long GETB(ulong col)
 	return b;
 }
 
-static void PHD_VBUF_To_D3DTLVTX(PHD_VBUF* phdV, D3DTLVERTEX* v)
+static void PHD_VBUF_To_D3DTLVTX(PHD_VBUF* phdV, GLVERTEX* v)
 {
 	long r, g, b;
 
@@ -185,7 +198,7 @@ static void PHD_VBUF_To_D3DTLVTX(PHD_VBUF* phdV, D3DTLVERTEX* v)
 	v->specular = 0;
 }
 
-static void PHD_VBUF_To_D3DTLVTX_WITHUV(PHD_VBUF* phdV, D3DTLVERTEX* v, ushort* uv)
+static void PHD_VBUF_To_D3DTLVTX_WITHUV(PHD_VBUF* phdV, GLVERTEX* v, ushort* uv)
 {
 	long r, g, b;
 
@@ -287,69 +300,59 @@ long visible_zclip(PHD_VBUF* v0, PHD_VBUF* v1, PHD_VBUF* v2)
 		(v0->yv * v2->zv - v2->yv * v0->zv) * v1->xv < 0;
 }
 
-long FindBucket(DXTEXTURE* TPage)
+long FindBucket(GLTEXTUREINFO* TPage)
 {
-	TEXTUREBUCKET* bucket;
-	long nVtx, fullest;
+    TEXTUREBUCKET* bucket;
+    long nVtx, fullest;
 
-	if (nDrawnPoints <= 2700)	//HACK: this seems to be a useless artifical limit (not sure though),
-								//so instead of failing to draw, immediately go find fullest bucket, draw it, and use it.
-								//TODO: make sure it's actually a useless limit and remove it, otherwise raise it.
-	{
-		for (int i = 0; i < MAX_BUCKETS; i++)
-		{
-			bucket = &Buckets[i];
+    if (nDrawnPoints <= 2700)
+    {
+        for (int i = 0; i < MAX_BUCKETS; i++)
+        {
+            bucket = &Buckets[i];
 
-			if (bucket->TPage == TPage && bucket->nVtx < (BUCKET_VERTS - BUCKET_EXTRA))
-				return i;
+            if (bucket->TPage == TPage && bucket->nVtx < (BUCKET_VERTS - BUCKET_EXTRA))
+                return i;
 
-			if (bucket->nVtx > (BUCKET_VERTS - BUCKET_EXTRA))
-			{
-				HWR_EnableZBuffer(1, 1);
-				HWR_SetCurrentTexture(bucket->TPage);
-#if (DIRECT3D_VERSION >= 0x900)
-				DrawPrimitive(D3DPT_TRIANGLELIST, bucket->vtx, bucket->nVtx);
-#else
-				DrawPrimitive(D3DPT_TRIANGLELIST, D3DVT_TLVERTEX, bucket->vtx, bucket->nVtx, D3DDP_DONOTCLIP | D3DDP_DONOTUPDATEEXTENTS);
-#endif
-				bucket->TPage = TPage;
-				bucket->nVtx = 0;
-				return i;
-			}
-		}
-	}
+            if (bucket->nVtx > (BUCKET_VERTS - BUCKET_EXTRA))
+            {
+                HWR_EnableZBuffer(1, 1);
+                HWR_SetCurrentTexture(bucket->TPage);
+                DrawGLTriangles(bucket->vtx, bucket->nVtx);
+                bucket->TPage = TPage;
+                bucket->nVtx = 0;
+                return i;
+            }
+        }
+    }
 
-	nVtx = 0;
-	fullest = 0;
+    nVtx = 0;
+    fullest = 0;
 
-	for (int i = 0; i < MAX_BUCKETS; i++)
-	{
-		bucket = &Buckets[i];
+    for (int i = 0; i < MAX_BUCKETS; i++)
+    {
+        bucket = &Buckets[i];
 
-		if (bucket->TPage == (DXTEXTURE*)-1)
-		{
-			bucket->TPage = TPage;
-			return i;
-		}
+        if (bucket->TPage == (GLTEXTUREINFO*)-1)
+        {
+            bucket->TPage = TPage;
+            return i;
+        }
 
-		if (bucket->nVtx > nVtx)
-		{
-			nVtx = bucket->nVtx;
-			fullest = i;
-		}
-	}
+        if (bucket->nVtx > nVtx)
+        {
+            nVtx = bucket->nVtx;
+            fullest = i;
+        }
+    }
 
-	bucket = &Buckets[fullest];
-	HWR_EnableZBuffer(1, 1);
-	HWR_SetCurrentTexture(bucket->TPage);
-#if (DIRECT3D_VERSION >= 0x900)
-	DrawPrimitive(D3DPT_TRIANGLELIST, bucket->vtx, bucket->nVtx);
-#else
-	DrawPrimitive(D3DPT_TRIANGLELIST, D3DVT_TLVERTEX, bucket->vtx, bucket->nVtx, D3DDP_DONOTCLIP | D3DDP_DONOTUPDATEEXTENTS);
-#endif
-	bucket->TPage = TPage;
-	bucket->nVtx = 0;
-	return fullest;
+    bucket = &Buckets[fullest];
+    HWR_EnableZBuffer(1, 1);
+    HWR_SetCurrentTexture(bucket->TPage);
+    DrawGLTriangles(bucket->vtx, bucket->nVtx);
+    bucket->TPage = TPage;
+    bucket->nVtx = 0;
+    return fullest;
 }
 
 void DrawBuckets()
@@ -363,11 +366,7 @@ void DrawBuckets()
 		if (bucket->nVtx)
 		{
 			HWR_SetCurrentTexture(bucket->TPage);
-#if (DIRECT3D_VERSION >= 0x900)
-			DrawPrimitive(D3DPT_TRIANGLELIST, bucket->vtx, bucket->nVtx);
-#else
-			DrawPrimitive(D3DPT_TRIANGLELIST, D3DVT_TLVERTEX, bucket->vtx, bucket->nVtx, D3DDP_DONOTCLIP | D3DDP_DONOTUPDATEEXTENTS);
-#endif
+			DrawGLTriangles(bucket->vtx, bucket->nVtx);
 		}
 	}
 }
@@ -826,7 +825,7 @@ short* HWI_InsertObjectG4_Sorted(short* pFaceInfo, long nFaces, sort_type nSortT
 void HWI_InsertFlatRect_Sorted(long x1, long y1, long x2, long y2, long zdepth, long col)
 {
 	TEXTUREBUCKET* bucket;
-	D3DTLVERTEX* v;
+	GLVERTEX* v;
 	long* sort;
 	short* info;
 	float z;
@@ -849,7 +848,7 @@ void HWI_InsertFlatRect_Sorted(long x1, long y1, long x2, long y2, long zdepth, 
 
 	z = one / (float)zdepth;
 
-	if (App.lpDXConfig->bZBuffer)
+	if (App.glConfig.bZBuffer)
 	{
 		nBucket = FindBucket(0);
 
@@ -919,8 +918,8 @@ void HWI_InsertFlatRect_Sorted(long x1, long y1, long x2, long y2, long zdepth, 
 		info[0] = DT_POLY_G;
 		info[1] = 0;
 		info[2] = 4;
-		v = CurrentTLVertex;
-		*((D3DTLVERTEX**)(info + 3)) = v;
+		v = CurrentGLVertex;
+		*((GLVERTEX**)(info + 3)) = v;
 
 		v[0].sx = (float)x1;
 		v[0].sy = (float)y1;
@@ -950,13 +949,13 @@ void HWI_InsertFlatRect_Sorted(long x1, long y1, long x2, long y2, long zdepth, 
 		v[3].color = col;
 		v[3].specular = 0;
 
-		CurrentTLVertex = v + 4;
+		CurrentGLVertex = v + 4;
 	}
 }
 
 void HWI_InsertLine_Sorted(long x1, long y1, long x2, long y2, long z, long c0, long c1)
 {
-	D3DTLVERTEX* v;
+	GLVERTEX* v;
 	long* sort;
 	short* info;
 
@@ -976,8 +975,8 @@ void HWI_InsertLine_Sorted(long x1, long y1, long x2, long y2, long z, long c0, 
 
 	info[1] = 0;
 	info[2] = 2;
-	v = CurrentTLVertex;
-	*((D3DTLVERTEX**)(info + 3)) = v;
+	v = CurrentGLVertex;
+	*((GLVERTEX**)(info + 3)) = v;
 
 	v[0].sx = float(phd_winxmin + x1);
 	v[0].sy = float(phd_winymin + y1);
@@ -993,7 +992,7 @@ void HWI_InsertLine_Sorted(long x1, long y1, long x2, long y2, long z, long c0, 
 	v[1].color = GlobalAlpha | c1;
 	v[1].specular = 0;
 
-	CurrentTLVertex = v + 2;
+	CurrentGLVertex = v + 2;
 }
 
 void HWI_InsertSprite_Sorted(long zdepth, long x1, long y1, long x2, long y2, long nSprite, ulong shade, ulong shade1, long nDrawType, long offset)
@@ -1147,7 +1146,7 @@ void HWI_InsertTrans8_Sorted(PHD_VBUF* buf, short shade)
 
 void HWI_InsertTransQuad_Sorted(long x, long y, long w, long h, long z)
 {
-	D3DTLVERTEX* v;
+	GLVERTEX* v;
 	long* sort;
 	short* info;
 	float zv;
@@ -1161,8 +1160,8 @@ void HWI_InsertTransQuad_Sorted(long x, long y, long w, long h, long z)
 	info[1] = 0;
 	info[2] = 4;
 
-	v = CurrentTLVertex;
-	*((D3DTLVERTEX**)(info + 3)) = CurrentTLVertex;
+	v = CurrentGLVertex;
+	*((GLVERTEX**)(info + 3)) = CurrentGLVertex;
 	zv = one / (float)z;
 
 	v[0].sx = (float)x;
@@ -1188,12 +1187,12 @@ void HWI_InsertTransQuad_Sorted(long x, long y, long w, long h, long z)
 	v[3].sz = f_a - zv * f_boo;
 	v[3].rhw = zv;
 	v[3].color = 0x50003F1F;
-	CurrentTLVertex = v + 4;
+	CurrentGLVertex = v + 4;
 }
 
 void HWI_InsertGourQuad_Sorted(long x0, long y0, long x1, long y1, long z, ulong c0, ulong c1, ulong c2, ulong c3, bool add)
 {
-	D3DTLVERTEX* v;
+	GLVERTEX* v;
 	long* sort;
 	short* info;
 	float zv;
@@ -1207,8 +1206,8 @@ void HWI_InsertGourQuad_Sorted(long x0, long y0, long x1, long y1, long z, ulong
 	info[1] = 0;
 	info[2] = 4;
 
-	v = CurrentTLVertex;
-	*((D3DTLVERTEX**)(info + 3)) = CurrentTLVertex;
+	v = CurrentGLVertex;
+	*((GLVERTEX**)(info + 3)) = CurrentGLVertex;
 	zv = one / (float)z;
 
 	v[0].sx = (float)x1;
@@ -1234,14 +1233,14 @@ void HWI_InsertGourQuad_Sorted(long x0, long y0, long x1, long y1, long z, ulong
 	v[3].sz = f_a - zv * f_boo;
 	v[3].rhw = zv;
 	v[3].color = c0;
-	CurrentTLVertex = v + 4;
+	CurrentGLVertex = v + 4;
 }
 
 void HWI_InsertGT4_Sorted(PHD_VBUF* v1, PHD_VBUF* v2, PHD_VBUF* v3, PHD_VBUF* v4, PHDTEXTURESTRUCT* pTex, sort_type nSortType, ushort double_sided)
 {
 	float zv;
 
-	if (App.lpDXConfig->bZBuffer || nPolyType != 3 && nPolyType != 4)
+	if (App.glConfig.bZBuffer || nPolyType != 3 && nPolyType != 4)
 	{
 		HWI_InsertGT4_Poly(v1, v2, v3, v4, pTex, nSortType, double_sided);
 		return;
@@ -1270,7 +1269,7 @@ void HWI_InsertGT3_Sorted(PHD_VBUF* v1, PHD_VBUF* v2, PHD_VBUF* v3, PHDTEXTUREST
 {
 	float zv;
 
-	if (App.lpDXConfig->bZBuffer || nPolyType != 3 && nPolyType != 4)
+	if (App.glConfig.bZBuffer || nPolyType != 3 && nPolyType != 4)
 	{
 		HWI_InsertGT3_Poly(v1, v2, v3, pTex, &pTex->u1, &pTex->u2, &pTex->u3, nSortType, double_sided);
 		return;
@@ -1295,7 +1294,7 @@ void HWI_InsertGT3_Sorted(PHD_VBUF* v1, PHD_VBUF* v2, PHD_VBUF* v3, PHDTEXTUREST
 void HWI_InsertGT3_Poly(PHD_VBUF* v0, PHD_VBUF* v1, PHD_VBUF* v2, PHDTEXTURESTRUCT* pTex, ushort* uv0, ushort* uv1, ushort* uv2, sort_type nSortType, ushort double_sided)
 {
 	PHD_VBUF* swapvtx;
-	D3DTLVERTEX* v;
+	GLVERTEX* v;
 	TEXTUREBUCKET* bucket;
 	POINT_INFO points[3];
 	long* sort;
@@ -1410,7 +1409,7 @@ void HWI_InsertGT3_Poly(PHD_VBUF* v0, PHD_VBUF* v1, PHD_VBUF* v2, PHDTEXTURESTRU
 			outsideBackgroundTop = v2->ys;
 	}
 
-	if (App.lpDXConfig->bZBuffer && nDrawType != DT_POLY_WGTA && nDrawType != DT_POLY_WGT && nDrawType != DT_POLY_COLSUB)
+	if (App.glConfig.bZBuffer && nDrawType != DT_POLY_WGTA && nDrawType != DT_POLY_WGT && nDrawType != DT_POLY_COLSUB)
 	{
 		nBucket = FindBucket(TexturePtrs[pTex->tpage]);
 
@@ -1457,22 +1456,22 @@ void HWI_InsertGT3_Poly(PHD_VBUF* v0, PHD_VBUF* v1, PHD_VBUF* v2, PHDTEXTURESTRU
 		info[0] = (short)nDrawType;
 		info[1] = pTex->tpage;
 		info[2] = 3;
-		v = CurrentTLVertex;
-		*((D3DTLVERTEX**)(info + 3)) = v;
+		v = CurrentGLVertex;
+		*((GLVERTEX**)(info + 3)) = v;
 		PHD_VBUF_To_D3DTLVTX_WITHUV(v0, v, uv0);	//all 3 originally inlined
 		v++;
 		PHD_VBUF_To_D3DTLVTX_WITHUV(v1, v, uv1);
 		v++;
 		PHD_VBUF_To_D3DTLVTX_WITHUV(v2, v, uv2);
 		v++;
-		CurrentTLVertex = v;
+		CurrentGLVertex = v;
 	}
 }
 
 void HWI_InsertGT4_Poly(PHD_VBUF* v0, PHD_VBUF* v1, PHD_VBUF* v2, PHD_VBUF* v3, PHDTEXTURESTRUCT* pTex, sort_type nSortType, ushort double_sided)
 {
 	PHD_VBUF* swap;
-	D3DTLVERTEX* v;
+	GLVERTEX* v;
 	TEXTUREBUCKET* bucket;
 	long* sort;
 	short* info;
@@ -1567,7 +1566,7 @@ void HWI_InsertGT4_Poly(PHD_VBUF* v0, PHD_VBUF* v1, PHD_VBUF* v2, PHD_VBUF* v3, 
 			outsideBackgroundTop = v3->ys;
 	}
 
-	if (App.lpDXConfig->bZBuffer && nDrawType != DT_POLY_WGTA && nDrawType != DT_POLY_WGT && nDrawType != DT_POLY_COLSUB)
+	if (App.glConfig.bZBuffer && nDrawType != DT_POLY_WGTA && nDrawType != DT_POLY_WGT && nDrawType != DT_POLY_COLSUB)
 	{
 		nBucket = FindBucket(TexturePtrs[pTex->tpage]);
 
@@ -1683,8 +1682,8 @@ void HWI_InsertGT4_Poly(PHD_VBUF* v0, PHD_VBUF* v1, PHD_VBUF* v2, PHD_VBUF* v3, 
 		info[1] = pTex->tpage;
 		info[2] = 4;
 
-		v = CurrentTLVertex;
-		*((D3DTLVERTEX**)(info + 3)) = v;
+		v = CurrentGLVertex;
+		*((GLVERTEX**)(info + 3)) = v;
 
 		if (double_sided)
 		{
@@ -1726,14 +1725,14 @@ void HWI_InsertGT4_Poly(PHD_VBUF* v0, PHD_VBUF* v1, PHD_VBUF* v2, PHD_VBUF* v3, 
 		v->tv = UVTable[pTex->v4];
 		v++;
 
-		CurrentTLVertex = v;
+		CurrentGLVertex = v;
 	}
 }
 
 void HWI_InsertClippedPoly_Textured(long nPoints, float zdepth, long nDrawType, long nTPage)
 {
 	VERTEX_INFO* vtxbuf;
-	D3DTLVERTEX* v;
+	GLVERTEX* v;
 	TEXTUREBUCKET* bucket;
 	long* sort;
 	short* info;
@@ -1742,7 +1741,7 @@ void HWI_InsertClippedPoly_Textured(long nPoints, float zdepth, long nDrawType, 
 
 	vtxbuf = v_buffer;
 
-	if (App.lpDXConfig->bZBuffer && nDrawType != DT_POLY_WGTA && nDrawType != DT_POLY_WGT && nDrawType != DT_POLY_COLSUB)
+	if (App.glConfig.bZBuffer && nDrawType != DT_POLY_WGTA && nDrawType != DT_POLY_WGT && nDrawType != DT_POLY_COLSUB)
 	{
 		nBucket = FindBucket(TexturePtrs[nTPage]);
 
@@ -1827,8 +1826,8 @@ void HWI_InsertClippedPoly_Textured(long nPoints, float zdepth, long nDrawType, 
 		info[0] = (short)nDrawType;
 		info[1] = (short)nTPage;
 		info[2] = (short)nPoints;
-		v = CurrentTLVertex;
-		*((D3DTLVERTEX**)(info + 3)) = v;
+		v = CurrentGLVertex;
+		*((GLVERTEX**)(info + 3)) = v;
 
 		for (int i = nPoints; i; i--, v++, vtxbuf++)
 		{
@@ -1843,7 +1842,7 @@ void HWI_InsertClippedPoly_Textured(long nPoints, float zdepth, long nDrawType, 
 			v->tv = vtxbuf->v * z;
 		}
 
-		CurrentTLVertex = v;
+		CurrentGLVertex = v;
 	}
 }
 
@@ -1851,7 +1850,7 @@ void HWI_InsertPoly_Gouraud(long nPoints, float zdepth, long r, long g, long b, 
 {
 	VERTEX_INFO* vtx;
 	TEXTUREBUCKET* bucket;
-	D3DTLVERTEX* v;
+	GLVERTEX* v;
 	long* sort;
 	short* info;
 	ulong maxCol;
@@ -1860,7 +1859,7 @@ void HWI_InsertPoly_Gouraud(long nPoints, float zdepth, long r, long g, long b, 
 	vtx = v_buffer;
 	maxCol = nDrawType != DT_POLY_GA ? 0xFFFFFFFF : 0x80FFFFFF;
 
-	if (App.lpDXConfig->bZBuffer && nDrawType != DT_POLY_GA)
+	if (App.glConfig.bZBuffer && nDrawType != DT_POLY_GA)
 	{
 		nBucket = FindBucket(0);
 
@@ -1937,8 +1936,8 @@ void HWI_InsertPoly_Gouraud(long nPoints, float zdepth, long r, long g, long b, 
 		info[0] = (short)nDrawType;
 		info[1] = 0;
 		info[2] = (short)nPoints;
-		v = CurrentTLVertex;
-		*((D3DTLVERTEX**)(info + 3)) = v;
+		v = CurrentGLVertex;
+		*((GLVERTEX**)(info + 3)) = v;
 
 		for (int i = nPoints; i; i--, v++, vtx++)
 		{
@@ -1953,7 +1952,7 @@ void HWI_InsertPoly_Gouraud(long nPoints, float zdepth, long r, long g, long b, 
 			v->specular = 0;
 		}
 
-		CurrentTLVertex = v;
+		CurrentGLVertex = v;
 	}
 }
 
@@ -1961,7 +1960,7 @@ void HWI_InsertPoly_GouraudRGB(long nPoints, float zdepth, long nDrawType)
 {
 	VERTEX_INFO* vtx;
 	TEXTUREBUCKET* bucket;
-	D3DTLVERTEX* v;
+	GLVERTEX* v;
 	long* sort;
 	short* info;
 	ulong maxCol;
@@ -1970,7 +1969,7 @@ void HWI_InsertPoly_GouraudRGB(long nPoints, float zdepth, long nDrawType)
 	maxCol = (nDrawType == DT_POLY_GA || nDrawType == DT_POLY_GTA) ? 0x80FFFFFF : 0xFFFFFFFF;
 	vtx = v_buffer;
 
-	if (App.lpDXConfig->bZBuffer && nDrawType != DT_POLY_GA && nDrawType != DT_POLY_GTA)
+	if (App.glConfig.bZBuffer && nDrawType != DT_POLY_GA && nDrawType != DT_POLY_GTA)
 	{
 		nBucket = FindBucket(0);
 
@@ -2037,8 +2036,8 @@ void HWI_InsertPoly_GouraudRGB(long nPoints, float zdepth, long nDrawType)
 		info[0] = (short)nDrawType;
 		info[1] = 0;
 		info[2] = (short)nPoints;
-		v = CurrentTLVertex;
-		*((D3DTLVERTEX**)(info + 3)) = v;
+		v = CurrentGLVertex;
+		*((GLVERTEX**)(info + 3)) = v;
 
 		for (int i = nPoints; i; i--, v++, vtx++)
 		{
@@ -2049,7 +2048,7 @@ void HWI_InsertPoly_GouraudRGB(long nPoints, float zdepth, long nDrawType)
 			v->color = (0xFF000000 | (vtx->vr << 16) | (vtx->vg << 8) | vtx->vb) & maxCol;
 		}
 
-		CurrentTLVertex = v;
+		CurrentGLVertex = v;
 	}
 }
 

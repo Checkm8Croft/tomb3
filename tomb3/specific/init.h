@@ -13,9 +13,20 @@ long S_InitialiseSystem();
 extern char* malloc_ptr;
 extern char* malloc_buffer;
 
-extern D3DTLVERTEX* CurrentTLVertex;
-extern D3DTLVERTEX* VertexBuffer;
-extern D3DTLVERTEX* UnRollBuffer;
+typedef unsigned long ulong;
+
+// Vertex per OpenGL, compatibile con il vecchio D3DTLVERTEX
+struct GLVERTEX {
+    float sx, sy, sz;      // screen coordinates
+    float rhw;             // reciprocal homogeneous w
+    ulong color;           // packed RGBA
+    ulong specular;        // specular color (unused, compatibilità)
+    float tu, tv;          // texture coordinates
+};
+
+extern GLVERTEX* CurrentGLVertex;
+extern GLVERTEX* VertexBuffer;
+extern GLVERTEX* UnRollBuffer;
 
 extern WATERTAB WaterTable[22][64];
 extern float wibble_table[32];

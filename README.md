@@ -5,12 +5,24 @@
 Porting the entire game from Windows and DirectX to all platforms in OpenGL and SDL
 Pull Requests are always welcome!
 
+## CONTRIBUTING
+Use the cmake file
+
 ## Progress
 I currently modified:
 - Types.h (one of the main headers, so I could say that I have 1/3 of the work ready)
 - Pch.h
 - Registry.h
 - Tomb3.cpp
+- Init.h
+- Winmain.cpp and .h
+- 3d_gen.cpp
+- Hwinsert.h (the cpp is currently work in progress)
+- File.h
+- Hwrender.h
+- Game.h
+- Init.h
+- Texture.h
 
 ### Credits:
 Checkm8Croft: For porting the project

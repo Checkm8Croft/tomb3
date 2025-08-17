@@ -11,8 +11,13 @@
 #define TROYESTUFF	1
 //#define DO_LOG	1
 
-#include <GL/gl.h>
-#include <GL/glu.h>
+#if defined(__APPLE__)
+    #include <OpenGL/gl.h>
+    #include <OpenGL/glu.h>
+#else
+    #include <GL/gl.h>
+    #include <GL/glu.h>
+#endif
 #include <cmath>
 #include <cstdio>
 #include <ctime>

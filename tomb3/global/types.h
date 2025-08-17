@@ -1,7 +1,12 @@
 #pragma once
 #include "math_tbls.h"
-#include <GL/gl.h> // Per GLuint
-
+#if defined(__APPLE__)
+    #include <OpenGL/gl.h>
+    #include <OpenGL/glu.h>
+#else
+    #include <GL/gl.h>
+    #include <GL/glu.h>
+#endif
 typedef unsigned char uchar;
 typedef unsigned short ushort;
 typedef unsigned long ulong;
@@ -1456,11 +1461,12 @@ struct TEXTUREBUCKET
 {
     GLTEXTUREINFO* TPage;
     long nVtx;
+	void* vtx;
     struct {
         float x, y, z;
         float u, v;
         ulong color;
-    } vtx[BUCKET_VERTS];
+    } GLVERTEX[BUCKET_VERTS];
 };
 
 struct POINT_INFO
@@ -2143,5 +2149,4 @@ struct APPWINDOW
     float fps;
 };
 
-// --- FINE SOSTITUZIONE DX/GL ---
 #pragma pack(pop)
