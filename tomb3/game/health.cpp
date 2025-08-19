@@ -343,66 +343,66 @@ void RemoveAmmoText()
 
 void DrawAmmoInfo()
 {
-	char txt[80];
+    char txt[80];
 
-	txt[0] = 0;
+    txt[0] = 0;
 
-	if (items[lara.skidoo].object_number == UPV)
-		wsprintf(txt, "%5d", lara.harpoon.ammo);
-	else
-	{
-		if (lara.gun_status != LG_READY || overlay_flag <= 0 || savegame.bonus_flag)
-		{
-			RemoveAmmoText();
-			return;
-		}
+    if (items[lara.skidoo].object_number == UPV)
+        snprintf(txt, sizeof(txt), "%5d", lara.harpoon.ammo);
+    else
+    {
+        if (lara.gun_status != LG_READY || overlay_flag <= 0 || savegame.bonus_flag)
+        {
+            RemoveAmmoText();
+            return;
+        }
 
-		switch (lara.gun_type)
-		{
-		case LG_MAGNUMS:
-			wsprintf(txt, "%5d", lara.magnums.ammo);
-			break;
+        switch (lara.gun_type)
+        {
+        case LG_MAGNUMS:
+            snprintf(txt, sizeof(txt), "%5d", lara.magnums.ammo);
+            break;
 
-		case LG_UZIS:
-			wsprintf(txt, "%5d", lara.uzis.ammo);
-			break;
+        case LG_UZIS:
+            snprintf(txt, sizeof(txt), "%5d", lara.uzis.ammo);
+            break;
 
-		case LG_SHOTGUN:
-			wsprintf(txt, "%5d", lara.shotgun.ammo / 6);
-			break;
+        case LG_SHOTGUN:
+            snprintf(txt, sizeof(txt), "%5d", lara.shotgun.ammo / 6);
+            break;
 
-		case LG_M16:
-			wsprintf(txt, "%5d", lara.m16.ammo);
-			break;
+        case LG_M16:
+            snprintf(txt, sizeof(txt), "%5d", lara.m16.ammo);
+            break;
 
-		case LG_ROCKET:
-			wsprintf(txt, "%5d", lara.rocket.ammo);
-			break;
+        case LG_ROCKET:
+            snprintf(txt, sizeof(txt), "%5d", lara.rocket.ammo);
+            break;
 
-		case LG_GRENADE:
-			wsprintf(txt, "%5d", lara.grenade.ammo);
-			break;
+        case LG_GRENADE:
+            snprintf(txt, sizeof(txt), "%5d", lara.grenade.ammo);
+            break;
 
-		case LG_HARPOON:
-			wsprintf(txt, "%5d", lara.harpoon.ammo);
-			break;
+        case LG_HARPOON:
+            snprintf(txt, sizeof(txt), "%5d", lara.harpoon.ammo);
+            break;
 
-		default:
-			return;
-		}
-	}
+        default:
+            return;
+        }
+    }
 
-	RemoveAmmoText();
+    RemoveAmmoText();
 
-	if (tomb3.ammo_counter == ACTR_PSX || tomb3.bar_pos == BPOS_PSX)	//PSX bar pos forces the PSX ammo counter.
-	{
-		ammotext = T_Print(AMMO_XPOS_PS, AMMO_YPOS_PS, 3, txt);
-		T_BottomAlign(ammotext, 1);
-	}
-	else
-		ammotext = T_Print(AMMO_XPOS_PC, AMMO_YPOS_PC, 0, txt);
+    if (tomb3.ammo_counter == ACTR_PSX || tomb3.bar_pos == BPOS_PSX)    //PSX bar pos forces the PSX ammo counter.
+    {
+        ammotext = T_Print(AMMO_XPOS_PS, AMMO_YPOS_PS, 3, txt);
+        T_BottomAlign(ammotext, 1);
+    }
+    else
+        ammotext = T_Print(AMMO_XPOS_PC, AMMO_YPOS_PC, 0, txt);
 
-	T_RightAlign(ammotext, 1);
+    T_RightAlign(ammotext, 1);
 }
 
 void DrawModeInfo()

@@ -1439,7 +1439,13 @@ struct SP_DYNAMIC
 	uchar Flags;
 	uchar Pad[2];
 };
-
+struct GLVERTEX {
+    float sx, sy, sz;      // screen coordinates
+    float rhw;             // reciprocal homogeneous w
+    ulong color;           // packed RGBA
+    ulong specular;        // specular color (unused, compatibilità)
+    float tu, tv;          // texture coordinates
+};
 // Texture info per OpenGL
 struct GLTEXTUREINFO
 {
@@ -1457,16 +1463,10 @@ struct GLTEXTUREINFO
     long height;
     TEXHANDLE handle;
 };
-struct TEXTUREBUCKET
-{
+struct TEXTUREBUCKET {
     GLTEXTUREINFO* TPage;
     long nVtx;
-	void* vtx;
-    struct {
-        float x, y, z;
-        float u, v;
-        ulong color;
-    } GLVERTEX[BUCKET_VERTS];
+    GLVERTEX vtx[BUCKET_VERTS];
 };
 
 struct POINT_INFO
@@ -2147,6 +2147,35 @@ struct APPWINDOW
     volatile bool hasFocus;
     long nUVAdd;
     float fps;
+
+	
 };
+typedef struct GLSurface {
+    GLuint texture_id;
+    int width;
+    int height;
+    void* pixels;
+} GLSurface, *LPDIRECTDRAWSURFACEX;
+typedef GLuint TEXHANDLE;  // Texture handle è un GLuint
+
+// Definisci una struttura per surface description (se necessario)
+typedef struct {
+    int width;
+    int height;
+    void* pixels;
+    int pitch;
+} DDSURFACEDESCX;
+
+// Per compatibilità, definisci alcuni tipi vuoti
+typedef void* LPDIRECT3DDEVICEX;
+typedef void* LPDIRECT3DX;
+typedef void* LPDIRECT3DTEXTUREX;
+#define RGBA_SETALPHA(rgba, x)  (((x) << 24) | ((rgba) & 0x00ffffff))
+#define RGBA_GETALPHA(rgb)      ((rgb) >> 24)
+#define RGBA_GETRED(rgb)        (((rgb) >> 16) & 0xff)
+#define RGBA_GETGREEN(rgb)      (((rgb) >> 8) & 0xff)
+#define RGBA_GETBLUE(rgb)       ((rgb) & 0xff)
+#define RGBA_MAKE(r, g, b, a)   ((uint32_t)(((a) << 24) | ((r) << 16) | ((g) << 8) | (b)))
+
 
 #pragma pack(pop)

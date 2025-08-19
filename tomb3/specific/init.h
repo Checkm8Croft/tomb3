@@ -15,14 +15,7 @@ extern char* malloc_buffer;
 
 typedef unsigned long ulong;
 
-// Vertex per OpenGL, compatibile con il vecchio D3DTLVERTEX
-struct GLVERTEX {
-    float sx, sy, sz;      // screen coordinates
-    float rhw;             // reciprocal homogeneous w
-    ulong color;           // packed RGBA
-    ulong specular;        // specular color (unused, compatibilità)
-    float tu, tv;          // texture coordinates
-};
+
 
 extern GLVERTEX* CurrentGLVertex;
 extern GLVERTEX* VertexBuffer;

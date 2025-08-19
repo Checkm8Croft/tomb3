@@ -17,12 +17,14 @@ I currently modified:
 - Init.h
 - Winmain.cpp and .h
 - 3d_gen.cpp
-- Hwinsert.h (the cpp is currently work in progress)
+- Hwinsert.h and cpp
 - File.h
 - Hwrender.h
 - Game.h
 - Init.h
 - Texture.h
+- Health.cpp
+- Invfunc.cpp
 
 ### Credits:
 Checkm8Croft: For porting the project

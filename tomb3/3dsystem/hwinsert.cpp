@@ -13,17 +13,58 @@
 #include "../game/gameflow.h"
 #include "../global/types.h"
 #include <GL/gl.h> // Assicurati che questa include sia presente
+#define GL_SILENCE_DEPRECATION
+#include <OpenGL/gl3.h>
+#include <OpenGL/glext.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_opengl.h>
 
-void DrawGLTriangles(GLVERTEX* vtx, long nVtx)
-{
-    glBegin(GL_TRIANGLES);
-    for (long i = 0; i < nVtx; ++i)
-    {
-        glColor4ub((vtx[i].color >> 16) & 0xFF, (vtx[i].color >> 8) & 0xFF, vtx[i].color & 0xFF, (vtx[i].color >> 24) & 0xFF);
-        glTexCoord2f(vtx[i].tu, vtx[i].tv);
-        glVertex3f(vtx[i].sx, vtx[i].sy, vtx[i].sz);
+void DrawGLTriangles(GLVERTEX* vtx, long nVtx) {
+    // Crea e bind un VAO
+    static GLuint vao = 0;
+    static GLuint vbo = 0;
+    
+    if (vao == 0) {
+		#if defined(__APPLE__)
+        glGenVertexArraysAPPLE(1, &vao);
+		#else
+		glGenVertexArrays(1, &vao);
+		#endif
+        glGenBuffers(1, &vbo);
     }
-    glEnd();
+	#if defined(__APPLE__)
+    glBindVertexArrayAPPLE(vao);
+	#else
+	glBindVertexArray(vao);
+	#endif
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    
+    // Carica i dati
+    glBufferData(GL_ARRAY_BUFFER, nVtx * sizeof(GLVERTEX), vtx, GL_STREAM_DRAW);
+    
+    // Configura gli attributi
+    glEnableVertexAttribArray(0); // Posizione
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLVERTEX), (void*)offsetof(GLVERTEX, sx));
+    
+    glEnableVertexAttribArray(1); // Colore
+    glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(GLVERTEX), (void*)offsetof(GLVERTEX, color));
+    
+    glEnableVertexAttribArray(2); // Texture coordinates
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(GLVERTEX), (void*)offsetof(GLVERTEX, tu));
+    
+    // Disegna
+    glDrawArrays(GL_TRIANGLES, 0, nVtx);
+    
+    // Pulisci
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+	#if defined(__APPLE__)
+    glBindVertexArrayAPPLE(0);
+	#else
+	glBindVertexArray(0);
+	#endif
 }
 static float UVTable[65536];
 static VERTEX_INFO v_buffer[MAX_VINFO];
@@ -2651,4 +2692,35 @@ long XYClipper(long n, VERTEX_INFO* in)
 		nPoints = 0;
 
 	return nPoints;
+}
+
+// Sostituisci l'inizializzazione GLEW con:
+void InitOpenGL() {
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        fprintf(stderr, "SDL init error: %s\n", SDL_GetError());
+        exit(1);
+    }
+
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    
+    SDL_Window* window = SDL_CreateWindow(
+        "Tomb3", 
+        SDL_WINDOWPOS_CENTERED, 
+        SDL_WINDOWPOS_CENTERED,
+        800, 600,
+        SDL_WINDOW_OPENGL
+    );
+
+    SDL_GLContext context = SDL_GL_CreateContext(window);
+    if (!context) {
+        fprintf(stderr, "OpenGL context error: %s\n", SDL_GetError());
+        exit(1);
+    }
+
+    // Configurazioni OpenGL base
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }

@@ -1668,7 +1668,7 @@ void RingNotActive(INVENTORY_ITEM* inv_item)
 		if (Inv_itemText[1] || savegame.bonus_flag)
 			return;
 
-		wsprintf(txt, "%5d", lara.shotgun.ammo / 6);
+		snprintf(txt, sizeof(txt), "%5d", lara.shotgun.ammo / 6);
 		break;
 
 	case MAGNUM_OPTION:
@@ -1676,7 +1676,7 @@ void RingNotActive(INVENTORY_ITEM* inv_item)
 		if (Inv_itemText[1] || savegame.bonus_flag)
 			return;
 
-		wsprintf(txt, "%5d", lara.magnums.ammo);
+		snprintf(txt, sizeof(txt), "%5d", lara.magnums.ammo);
 		break;
 
 	case UZI_OPTION:
@@ -1684,7 +1684,7 @@ void RingNotActive(INVENTORY_ITEM* inv_item)
 		if (Inv_itemText[1] || savegame.bonus_flag)
 			return;
 
-		wsprintf(txt, "%5d", lara.uzis.ammo);
+		snprintf(txt, sizeof(txt), "%5d", lara.uzis.ammo);
 		break;
 
 	case HARPOON_OPTION:
@@ -1692,7 +1692,7 @@ void RingNotActive(INVENTORY_ITEM* inv_item)
 		if (Inv_itemText[1] || savegame.bonus_flag)
 			return;
 
-		wsprintf(txt, "%5d", lara.harpoon.ammo);
+		snprintf(txt, sizeof(txt), "%5d", lara.harpoon.ammo);
 		break;
 
 	case M16_OPTION:
@@ -1700,7 +1700,7 @@ void RingNotActive(INVENTORY_ITEM* inv_item)
 		if (Inv_itemText[1] || savegame.bonus_flag)
 			return;
 
-		wsprintf(txt, "%5d", lara.m16.ammo);
+		snprintf(txt, sizeof(txt), "%5d", lara.harpoon.ammo);
 		break;
 
 	case ROCKET_OPTION:
@@ -1708,7 +1708,7 @@ void RingNotActive(INVENTORY_ITEM* inv_item)
 		if (Inv_itemText[1] || savegame.bonus_flag)
 			return;
 
-		wsprintf(txt, "%5d", lara.rocket.ammo);
+		snprintf(txt, sizeof(txt), "%5d", lara.m16.ammo);
 		break;
 
 	case GRENADE_OPTION:
@@ -1716,7 +1716,7 @@ void RingNotActive(INVENTORY_ITEM* inv_item)
 		if (Inv_itemText[1] || savegame.bonus_flag)
 			return;
 
-		wsprintf(txt, "%5d", lara.grenade.ammo);
+		snprintf(txt, sizeof(txt), "%5d", lara.rocket.ammo);
 		break;
 
 	case SG_AMMO_OPTION:
@@ -1724,7 +1724,7 @@ void RingNotActive(INVENTORY_ITEM* inv_item)
 		if (Inv_itemText[1])
 			return;
 
-		wsprintf(txt, "%5d", qty * 2);
+		snprintf(txt, sizeof(txt), "%5d", lara.grenade.ammo);
 		break;
 
 	case MAG_AMMO_OPTION:
@@ -1734,7 +1734,7 @@ void RingNotActive(INVENTORY_ITEM* inv_item)
 		if (Inv_itemText[1] || savegame.bonus_flag)
 			return;
 
-		wsprintf(txt, "%d", qty * 2);
+		snprintf(txt, sizeof(txt), "%5d", qty * 2);
 		break;
 
 	case HARPOON_AMMO_OPTION:
@@ -1742,7 +1742,7 @@ void RingNotActive(INVENTORY_ITEM* inv_item)
 		if (Inv_itemText[1] || savegame.bonus_flag)
 			return;
 
-		wsprintf(txt, "%d", lara.harpoon.ammo);
+		snprintf(txt, sizeof(txt), "%d", qty * 2);
 		break;
 
 	case ROCKET_AMMO_OPTION:
@@ -1752,7 +1752,7 @@ void RingNotActive(INVENTORY_ITEM* inv_item)
 		if (Inv_itemText[1] || savegame.bonus_flag)
 			return;
 
-		wsprintf(txt, "%d", qty);
+		snprintf(txt, sizeof(txt), "%d", lara.harpoon.ammo);
 		break;
 
 	case MEDI_OPTION:
@@ -1780,7 +1780,7 @@ void RingNotActive(INVENTORY_ITEM* inv_item)
 		if (Inv_itemText[1] || qty <= 1)
 			return;
 
-		wsprintf(txt, "%d", qty);
+		snprintf(txt, sizeof(txt), "%d", qty);
 		break;
 
 	default:
