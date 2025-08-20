@@ -30,7 +30,7 @@
 #include "../tomb3/tomb3.h"
 #include "../global/types.h"
 #include <SDL2/SDL.h>
-
+extern PHDSPRITESTRUCT phdspriteinfo[512];
 static BITE_INFO NodeOffsets[16] =
 {
 	{0, 340, 64, 7},

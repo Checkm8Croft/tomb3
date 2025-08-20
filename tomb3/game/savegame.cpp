@@ -23,6 +23,17 @@
 #include "../newstuff/map.h"
 #include "../tomb3/tomb3.h"
 
+extern short* floor_data;
+extern short* commands;
+extern CHANGE_STRUCT* changes;
+extern RANGE_STRUCT* ranges;
+extern PHDTEXTURESTRUCT phdtextinfo[MAX_TINFOS];
+extern PHDSPRITESTRUCT phdspriteinfo[512];
+extern uchar G_GouraudPalette[1024];
+extern short* mesh_base;
+extern short* frames;
+extern long number_cameras;
+
 SAVEGAME_INFO savegame;
 static char* SGpoint;
 static long SGcount;

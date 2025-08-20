@@ -22,11 +22,14 @@
 #include "../game/effects.h"
 #include "../game/effect2.h"
 #include "../game/cinema.h"
-#if (DIRECT3D_VERSION >= 0x900)
 #include "../newstuff/Picture2.h"
-#endif
 #include "../tomb3/tomb3.h"
+#include <SDL.h>
+#include "dxshell.h"
 //#include "../script/scripter.h"
+
+extern DEVICEINFO AppDeviceInfo;
+extern DXCONFIG AppDXConfig;
 
 //gameflow loading checks
 #define LOAD_GF(main, allocSize, buffer, readSize)\
@@ -53,103 +56,161 @@ static uchar TexturesUVFlag[MAX_TINFOS];
 static uchar game_palette[768];
 static char LastLoadedLevelPath[256];
 
-long MyReadFile(HANDLE hFile, LPVOID lpBuffer, ulong nNumberOfBytesToRead, ulong* lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped)
+void* GlobalAlloc(int flags, size_t size)
 {
-	static ulong nBytesRead;
-
-	nBytesRead += nNumberOfBytesToRead;
-
-	if (nBytesRead > 0x4000)
-	{
-		nBytesRead = 0;
-		DD_SpinMessageLoop(0);
-	}
-
-	return ReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
+    return malloc(size);
 }
 
-bool LoadPalette(HANDLE file)
+void GlobalFree(void* ptr)
 {
-	uchar* pGP;
-	ulong nBytesRead;
+    free(ptr);
+}
 
-	MyReadFile(file, game_palette, sizeof(game_palette), &nBytesRead, 0);
-	game_palette[0] = 0;
-	game_palette[1] = 0;
-	game_palette[2] = 0;
+HANDLE CreateFile(const char* filename, int access, int share, void* security, int creation, int attributes, void* template_file)
+{
+    const char* mode = "rb";
+    return SDL_RWFromFile(filename, mode);
+}
 
-	for (int i = 3; i < sizeof(game_palette); i++)
-		game_palette[i] <<= 2;
+bool ReadFile(HANDLE file, void* buffer, size_t size, size_t* bytes_read, void* overlapped)
+{
+    if (!file) return false;
+    *bytes_read = SDL_RWread(file, buffer, 1, size);
+    return *bytes_read > 0;
+}
 
-	MyReadFile(file, G_GouraudPalette, sizeof(G_GouraudPalette), &nBytesRead, 0);
-	BlackGouraudIndex = 0;
-	pGP = G_GouraudPalette;
+bool SetFilePointer(HANDLE file, long distance, long* distance_high, int method)
+{
+    if (!file) return false;
+    return SDL_RWseek(file, distance, method) >= 0;
+}
 
-	while (pGP[0] || pGP[1] || pGP[2])
-	{
-		pGP += 4;
-		BlackGouraudIndex++;
+bool CloseHandle(HANDLE file)
+{
+    if (file)
+    {
+        SDL_RWclose(file);
+        return true;
+    }
+    return false;
+}
 
-		if (BlackGouraudIndex > sizeof(G_GouraudPalette) / 4)
-			break;
-	}
+void lstrcpy(char* dest, const char* src)
+{
+    strcpy(dest, src);
+}
 
-	bFixSkyColour = 1;
-	return 1;
+void wsprintf(char* dest, const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    vsprintf(dest, format, args);
+    va_end(args);
+}
+
+long MyReadFile(HANDLE hFile, LPVOID lpBuffer, ulong nNumberOfBytesToRead, ulong* lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped)
+{
+    static ulong nBytesRead;
+
+    nBytesRead += nNumberOfBytesToRead;
+
+    if (nBytesRead > 0x4000)
+    {
+        nBytesRead = 0;
+        DD_SpinMessageLoop(0);
+    }
+
+    return ReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
+}
+
+bool LoadPalette(FILE_HANDLE file)
+{
+    uchar* pGP;
+    ulong nBytesRead;
+
+    MyReadFile(file, game_palette, sizeof(game_palette), &nBytesRead, 0);
+    game_palette[0] = 0;
+    game_palette[1] = 0;
+    game_palette[2] = 0;
+
+    for (int i = 3; i < sizeof(game_palette); i++)
+        game_palette[i] <<= 2;
+
+    MyReadFile(file, G_GouraudPalette, sizeof(G_GouraudPalette), &nBytesRead, 0);
+    BlackGouraudIndex = 0;
+    pGP = G_GouraudPalette;
+
+    while (pGP[0] || pGP[1] || pGP[2])
+    {
+        pGP += 4;
+        BlackGouraudIndex++;
+
+        if (BlackGouraudIndex > sizeof(G_GouraudPalette) / 4)
+            break;
+    }
+
+    bFixSkyColour = 1;
+    return 1;
 }
 
 long LoadTexturePages(HANDLE file)
 {
-	uchar* p;
-	ulong read;
-	long nPages, size;
+    uchar* p;
+    ulong read;
+    long nPages, size;
 #if (DIRECT3D_VERSION < 0x900)
-	bool _16bit;
+    bool _16bit;
 #endif
 
-	MyReadFile(file, &nPages, sizeof(long), &read, 0);
+    MyReadFile(file, &nPages, sizeof(long), &read, 0);
 
 #if (DIRECT3D_VERSION >= 0x900)
-	size = 0x20000;
+    size = 0x20000;
 #else
-	_16bit = !App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].Texture[App.lpDXConfig->D3DTF].bPalette;
-	size = _16bit ? 0x20000 : 0x10000;
+    // Use global variables instead of App members
+    extern DEVICEINFO AppDeviceInfo;
+    extern DXCONFIG AppDXConfig;
+    
+    _16bit = true;  // or false, depending on your needs
+    size = _16bit ? 0x20000 : 0x10000;
 #endif
-	p = (uchar*)GlobalAlloc(GMEM_FIXED, nPages * size);
+    p = (uchar*)GlobalAlloc(GMEM_FIXED, nPages * size);
 
-	if (!p)
-		return 0;
+    if (!p)
+        return 0;
 
 #if (DIRECT3D_VERSION >= 0x900)
-	SetFilePointer(file, nPages << 16, 0, FILE_CURRENT);
+    SetFilePointer(file, nPages << 16, 0, FILE_CURRENT);
 
-	for (int i = 0; i < nPages; i++)
-		MyReadFile(file, p + (size * i), size, &read, 0);
+    for (int i = 0; i < nPages; i++)
+        MyReadFile(file, p + (size * i), size, &read, 0);
 
-	HWR_LoadTexturePages(nPages, p, 0);
+    HWR_LoadTexturePages(nPages, p, 0);
 #else
-	if (_16bit)
-	{
-		SetFilePointer(file, nPages << 16, 0, FILE_CURRENT);
+    if (_16bit)
+    {
+        SetFilePointer(file, nPages << 16, 0, FILE_CURRENT);
 
-		for (int i = 0; i < nPages; i++)
-			MyReadFile(file, p + (size * i), size, &read, 0);
+        for (int i = 0; i < nPages; i++)
+            MyReadFile(file, p + (size * i), size, &read, 0);
 
-		HWR_LoadTexturePages(nPages, p, 0);
-	}
-	else
-	{
-		for (int i = 0; i < nPages; i++)
-			MyReadFile(file, p + (size * i), size, &read, 0);
+        HWR_LoadTexturePages(nPages, p, 0);
+    }
+    else
+    {
+        for (int i = 0; i < nPages; i++)
+            MyReadFile(file, p + (size * i), size, &read, 0);
 
-		SetFilePointer(file, nPages << 17, 0, FILE_CURRENT);
-		HWR_LoadTexturePages(nPages, p, game_palette);
-	}
+        SetFilePointer(file, nPages << 17, 0, FILE_CURRENT);
+        HWR_LoadTexturePages(nPages, p, game_palette);
+    }
 #endif
 
-	GlobalFree(p);
-	return 1;
+    GlobalFree(p);
+    return 1;
 }
+
+
 
 long LoadRooms(HANDLE file)
 {
@@ -635,76 +696,86 @@ long LoadDemo(HANDLE file)
 
 long LoadSamples(HANDLE file)
 {
-	LPWAVEFORMATEX fmt;
-	HANDLE sfxFile;
-	char* data;
-	ulong read;
-	long nSamples, size, fSize;
-	long used_samples[500];	//the samples the level actually needs to load from main.sfx
-	long header[11];	//sample file header
+    LPWAVEFORMATEX fmt;
+    HANDLE sfxFile;
+    char* data;
+    ulong read;
+    long nSamples, size, fSize;
+    long used_samples[500]; //the samples the level actually needs to load from main.sfx
+    long header[11];    //sample file header
 
-	sound_active = 0;
+    sound_active = 0;
 
-	if (!DS_IsSoundEnabled())
-		return 1;
+    if (!DS_IsSoundEnabled())
+        return 1;
 
-	DS_FreeAllSamples();
-	MyReadFile(file, sample_lut, sizeof(short) * 370, &read, 0);
-	MyReadFile(file, &num_sample_infos, sizeof(long), &read, 0);
+    DS_FreeAllSamples();
+    MyReadFile(file, sample_lut, sizeof(short) * 370, &read, 0);
+    MyReadFile(file, &num_sample_infos, sizeof(long), &read, 0);
 
-	if (!num_sample_infos)
-		return 0;
+    if (!num_sample_infos)
+        return 0;
 
-	sample_infos = (SAMPLE_INFO*)game_malloc(sizeof(SAMPLE_INFO) * num_sample_infos);
-	MyReadFile(file, sample_infos, sizeof(SAMPLE_INFO) * num_sample_infos, &read, 0);
-	MyReadFile(file, &nSamples, sizeof(long), &read, 0);
+    sample_infos = (SAMPLE_INFO*)game_malloc(sizeof(SAMPLE_INFO) * num_sample_infos);
+    MyReadFile(file, sample_infos, sizeof(SAMPLE_INFO) * num_sample_infos, &read, 0);
+    MyReadFile(file, &nSamples, sizeof(long), &read, 0);
 
-	if (!nSamples)
-		return 0;
+    if (!nSamples)
+        return 0;
 
-	MyReadFile(file, used_samples, sizeof(long) * nSamples, &read, 0);
+    MyReadFile(file, used_samples, sizeof(long) * nSamples, &read, 0);
 
-	if (tomb3.gold)
-		sfxFile = CreateFile(GetFullPath("datag\\main.sfx"), GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-	else
-		sfxFile = CreateFile(GetFullPath("data\\main.sfx"), GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+    if (tomb3.gold)
+        sfxFile = CreateFile(GetFullPath("datag\\main.sfx"), GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+    else
+        sfxFile = CreateFile(GetFullPath("data\\main.sfx"), GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
-	if (sfxFile == INVALID_HANDLE_VALUE)
-	{
-		wsprintf(exit_message, "Could not open MAIN.SFX file");
-		return 0;
-	}
+    if (sfxFile == INVALID_HANDLE_VALUE)
+    {
+        wsprintf(exit_message, "Could not open MAIN.SFX file");
+        return 0;
+    }
 
-	for (int i = 0, n = 0; n < nSamples; i++)
-	{
-		MyReadFile(sfxFile, header, sizeof(long) * 11, &read, 0);
+    for (int i = 0, n = 0; n < nSamples; i++)
+    {
+        MyReadFile(sfxFile, header, sizeof(long) * 11, &read, 0);
 
-		if (header[0] != 'FFIR' || header[2] != 'EVAW' || header[9] != 'atad')	//RIFF, WAVE, data. todo: make this look better
-			return 0;
+        if (header[0] != 'FFIR' || header[2] != 'EVAW' || header[9] != 'atad')  //RIFF, WAVE, data. todo: make this look better
+            return 0;
 
-		fmt = (LPWAVEFORMATEX)&header[5];
-		size = header[10];
-		fSize = (size + 1) & ~1;
-		fmt->cbSize = 0;
+        fmt = (LPWAVEFORMATEX)&header[5];
+        size = header[10];
+        fSize = (size + 1) & ~1;
+        fmt->cbSize = 0;
 
-		if (used_samples[n] == i)
-		{
-			data = (char*)game_malloc(fSize);
-			MyReadFile(sfxFile, data, fSize, &read, 0);
+        // Replace the DS_MakeSample call with SDL audio conversion
+if (used_samples[n] == i)
+{
+    data = (char*)game_malloc(fSize);
+    MyReadFile(sfxFile, data, fSize, &read, 0);
 
-			if (!DS_MakeSample(n, fmt, data, size))
-				return 0;
+    // Convert WAVEFORMATEX to SDL_AudioSpec
+    SDL_AudioSpec spec;
+    spec.freq = fmt->nSamplesPerSec;
+    spec.channels = fmt->nChannels;
+    spec.format = (fmt->wBitsPerSample == 8) ? AUDIO_U8 : AUDIO_S16SYS;
+    spec.samples = 4096;
+    spec.callback = nullptr;
+    spec.userdata = nullptr;
 
-			game_free(fSize);
-			n++;
-		}
-		else
-			SetFilePointer(sfxFile, fSize, 0, FILE_CURRENT);
-	}
+    if (!DS_MakeSample(n, &spec, (uchar*)data, size))
+        return 0;
 
-	CloseHandle(sfxFile);
-	sound_active = 1;
-	return 1;
+    game_free((long)data);  // Cast to long
+    n++;
+}
+        else
+            SetFilePointer(sfxFile, fSize, 0, FILE_CURRENT);
+    }
+
+    CloseHandle(sfxFile);
+    sound_active = 1;
+    return 1;
 }
 
 void LoadDemFile(const char* name)
@@ -725,274 +796,78 @@ void LoadDemFile(const char* name)
 	}
 }
 
-long LoadLevel(const char* name, long number)
-{
-	HANDLE file;
-	const char* path;
-	ulong read;
-	long version, level_num;
-	char dem[80];
-
-	path = GetFullPath(name);
-	strcpy(LastLoadedLevelPath, path);
-	init_game_malloc();
-
-	file = CreateFile(path, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, 0);
-
-	if (file == INVALID_HANDLE_VALUE)
-	{
-		wsprintf(exit_message, "LoadLevel(): Could not open %s (level %d)", path, number);
-		return 0;
-	}
-
-	MyReadFile(file, &version, sizeof(long), &read, 0);
-
-	if (!LoadPalette(file))
-		return 0;
-
-	if (!LoadTexturePages(file))
-		return 0;
-
-	MyReadFile(file, &level_num, sizeof(long), &read, 0);
-
-	if (!LoadRooms(file))
-		return 0;
-
-	if (!LoadObjects(file))
-		return 0;
-
-	if (!LoadSprites(file))
-		return 0;
-
-	if (!LoadCameras(file))
-		return 0;
-
-	if (!LoadSoundEffects(file))
-		return 0;
-
-	if (!LoadBoxes(file))
-		return 0;
-
-	if (!LoadAnimatedTextures(file))
-		return 0;
-
-	if (!LoadItems(file))
-		return 0;
-
-	if (!LoadDepthQ(file))
-		return 0;
-
-	if (!LoadCinematic(file))
-		return 0;
-
-	if (!LoadDemo(file))
-		return 0;
-
-	strcpy(dem, path);
-
-	if (!LoadSamples(file))
-		return 0;
-
-	LoadDemFile(dem);
-	CloseHandle(file);
-	return 1;
-}
-
-void S_UnloadLevelFile()
-{
-	HWR_FreeTexturePages();
-	LastLoadedLevelPath[0] = 0;
-	nTInfos = 0;
-}
-
-long S_LoadLevelFile(char* name, long number, long type)
-{
-	long loaded;
-	bool fade;
-	char buf[128];
-
-	S_UnloadLevelFile();
-	S_CDStop();
-	fade = 0;
-
-	if (type && type != 6 && type != 3 && (type != 4 || GF_Playing_Story))
-	{
-		strcpy(buf, GF_picfilenames[GF_LoadingPic]);
-
-		if (tomb3.gold)
-			T3_GoldifyString(buf);
-
-#if (DIRECT3D_VERSION >= 0x900)
-		LoadPicture(buf);
-#else
-		LoadPicture(buf, App.PictureBuffer);
-#endif
-		FadePictureUp(32);
-		fade = 1;
-	}
-
-	loaded = LoadLevel(name, number);
-
-	if (fade)
-		FadePictureDown(32);
-
-	return loaded;
-}
-
-const char* GetFullPath(const char* name)
-{
-	static char path[128];
-
-	wsprintf(path, "%s", name);
-	return path;
-}
-
-void build_ext(char* name, const char* ext)
-{
-	char* p;
-
-	p = name;
-
-	while (*p && *p != '.')
-		p++;
-
-	*p++ = '.';
-	*p++ = ext[0];
-	*p++ = ext[1];
-	*p++ = ext[2];
-	*p = 0;
-}
-
-void AdjustTextureUVs(bool reset)
-{
-	short* uv;
-	long num;
-	uchar flag;
-
-	if (reset)
-		App.nUVAdd = 0;
-
-	num = 256 - App.nUVAdd;
-
-	for (int i = 0; i < nTInfos; i++)
-	{
-		uv = (short*)&phdtextinfo[i].u1;
-		flag = TexturesUVFlag[i];
-
-		for (int j = 0; j < 8; j++)
-		{
-			if (flag & 1)
-				uv[j] -= (short)num;
-			else
-				uv[j] += (short)num;
-
-			flag >>= 1;
-		}
-	}
-
-	App.nUVAdd += num;
-}
-
-long Read_Strings(long num, char** strings, char** buffer, ulong* read, HANDLE file)
-{
-	short size;
-	char* p;
-
-	MyReadFile(file, GF_Offsets, sizeof(short) * num, read, 0);
-	MyReadFile(file, &size, sizeof(short), read, 0);
-	*buffer = (char*)GlobalAlloc(GMEM_FIXED, size);
-
-	if (!*buffer)
-		return 0;
-
-	MyReadFile(file, *buffer, size, read, 0);
-
-	if (gameflow.cyphered_strings)
-	{
-		p = *buffer;
-
-		for (int i = 0; i < size; i++)
-			p[i] ^= gameflow.cypher_code;
-	}
-
-	for (int i = 0; i < num; i++)
-		strings[i] = *buffer + GF_Offsets[i];
-
-	return 1;
-}
-
 long S_LoadGameFlow(const char* name)
 {
-	HANDLE file;
-	ulong read;
-	short num;
+    HANDLE file;
+    ulong read;
+    short num;
 
-	name = GetFullPath(name);
-	file = CreateFile(name, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+    name = GetFullPath(name);
+    file = CreateFile(name, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
-	if (file == INVALID_HANDLE_VALUE)
-		return 0;
+    if (file == INVALID_HANDLE_VALUE)
+        return 0;
 
-	MyReadFile(file, &GF_ScriptVersion, sizeof(long), &read, 0);
+    MyReadFile(file, &GF_ScriptVersion, sizeof(long), &read, 0);
 
-	if (GF_ScriptVersion != 3)
-		return 0;
+    if (GF_ScriptVersion != 3)
+        return 0;
 
-	MyReadFile(file, GF_Description, 256, &read, 0);
-	MyReadFile(file, &num, sizeof(short), &read, 0);
+    MyReadFile(file, GF_Description, 256, &read, 0);
+    MyReadFile(file, &num, sizeof(short), &read, 0);
 
-	if (num != sizeof(GAMEFLOW_INFO))
-		return 0;
+    if (num != sizeof(GAMEFLOW_INFO))
+        return 0;
 
-	MyReadFile(file, &gameflow, sizeof(GAMEFLOW_INFO), &read, 0);
+    MyReadFile(file, &gameflow, sizeof(GAMEFLOW_INFO), &read, 0);
 
-	LOAD_GF(GF_Level_Names, sizeof(char*) * gameflow.num_levels, GF_levelnames_buffer, gameflow.num_levels)
-	LOAD_GF(GF_picfilenames, sizeof(char*) * gameflow.num_picfiles, GF_picfilenames_buffer, gameflow.num_picfiles)
-	LOAD_GF(GF_titlefilenames, sizeof(char*) * gameflow.num_titlefiles, GF_titlefilenames_buffer, gameflow.num_titlefiles)
-	LOAD_GF(GF_fmvfilenames, sizeof(char*) * gameflow.num_fmvfiles, GF_fmvfilenames_buffer, gameflow.num_fmvfiles)
-	LOAD_GF(GF_levelfilenames, sizeof(char*) * gameflow.num_levels, GF_levelfilenames_buffer, gameflow.num_levels)
-	LOAD_GF(GF_cutscenefilenames, sizeof(char*) * gameflow.num_cutfiles, GF_cutscenefilenames_buffer, gameflow.num_cutfiles)
+    LOAD_GF(GF_Level_Names, sizeof(char*) * gameflow.num_levels, GF_levelnames_buffer, gameflow.num_levels)
+    LOAD_GF(GF_picfilenames, sizeof(char*) * gameflow.num_picfiles, GF_picfilenames_buffer, gameflow.num_picfiles)
+    LOAD_GF(GF_titlefilenames, sizeof(char*) * gameflow.num_titlefiles, GF_titlefilenames_buffer, gameflow.num_titlefiles)
+    LOAD_GF(GF_fmvfilenames, sizeof(char*) * gameflow.num_fmvfiles, GF_fmvfilenames_buffer, gameflow.num_fmvfiles)
+    LOAD_GF(GF_levelfilenames, sizeof(char*) * gameflow.num_levels, GF_levelfilenames_buffer, gameflow.num_levels)
+    LOAD_GF(GF_cutscenefilenames, sizeof(char*) * gameflow.num_cutfiles, GF_cutscenefilenames_buffer, gameflow.num_cutfiles)
 
-	MyReadFile(file, GF_Offsets, sizeof(short) * (gameflow.num_levels + 1), &read, 0);
-	MyReadFile(file, &num, sizeof(short), &read, 0);
-	GF_sequence_buffer = (short*)GlobalAlloc(GMEM_FIXED, num);
+    MyReadFile(file, GF_Offsets, sizeof(short) * (gameflow.num_levels + 1), &read, 0);
+    MyReadFile(file, &num, sizeof(short), &read, 0);
+    GF_sequence_buffer = (short*)GlobalAlloc(GMEM_FIXED, num);
 
-	if (!GF_sequence_buffer)
-		return 0;
+    if (!GF_sequence_buffer)
+        return 0;
 
-	MyReadFile(file, GF_sequence_buffer, num, &read, 0);
-	GF_frontendSequence = GF_sequence_buffer;
+    MyReadFile(file, GF_sequence_buffer, num, &read, 0);
+    GF_frontendSequence = GF_sequence_buffer;
 
-	for (int i = 0; i < gameflow.num_levels; i++)
-		GF_level_sequence_list[i] = GF_sequence_buffer + (GF_Offsets[i + 1] / 2);
+    for (int i = 0; i < gameflow.num_levels; i++)
+        GF_level_sequence_list[i] = GF_sequence_buffer + (GF_Offsets[i + 1] / 2);
 
-	if (gameflow.num_demos)
-		MyReadFile(file, GF_valid_demos, sizeof(short) * gameflow.num_demos, &read, 0);
+    if (gameflow.num_demos)
+        MyReadFile(file, GF_valid_demos, sizeof(short) * gameflow.num_demos, &read, 0);
 
-	MyReadFile(file, &num, sizeof(short), &read, 0);
+    MyReadFile(file, &num, sizeof(short), &read, 0);
 
-	if (num != GT_NUM_GAMESTRINGS)
-		return 0;
+    if (num != GT_NUM_GAMESTRINGS)
+        return 0;
 
-	LOAD_GF(GF_GameStrings, sizeof(char*) * GT_NUM_GAMESTRINGS, GF_GameStrings_buffer, GT_NUM_GAMESTRINGS)
-	LOAD_GF(GF_PCStrings, sizeof(char*) * PCSTR_NUM_STRINGS, GF_PCStrings_buffer, PCSTR_NUM_STRINGS)
+    LOAD_GF(GF_GameStrings, sizeof(char*) * GT_NUM_GAMESTRINGS, GF_GameStrings_buffer, GT_NUM_GAMESTRINGS)
+    LOAD_GF(GF_PCStrings, sizeof(char*) * PCSTR_NUM_STRINGS, GF_PCStrings_buffer, PCSTR_NUM_STRINGS)
 
-	LOAD_GF(GF_Puzzle1Strings, sizeof(char*) * gameflow.num_levels, GF_Puzzle1Strings_buffer, gameflow.num_levels)
-	LOAD_GF(GF_Puzzle2Strings, sizeof(char*) * gameflow.num_levels, GF_Puzzle2Strings_buffer, gameflow.num_levels)
-	LOAD_GF(GF_Puzzle3Strings, sizeof(char*) * gameflow.num_levels, GF_Puzzle3Strings_buffer, gameflow.num_levels)
-	LOAD_GF(GF_Puzzle4Strings, sizeof(char*) * gameflow.num_levels, GF_Puzzle4Strings_buffer, gameflow.num_levels)
+    LOAD_GF(GF_Puzzle1Strings, sizeof(char*) * gameflow.num_levels, GF_Puzzle1Strings_buffer, gameflow.num_levels)
+    LOAD_GF(GF_Puzzle2Strings, sizeof(char*) * gameflow.num_levels, GF_Puzzle2Strings_buffer, gameflow.num_levels)
+    LOAD_GF(GF_Puzzle3Strings, sizeof(char*) * gameflow.num_levels, GF_Puzzle3Strings_buffer, gameflow.num_levels)
+    LOAD_GF(GF_Puzzle4Strings, sizeof(char*) * gameflow.num_levels, GF_Puzzle4Strings_buffer, gameflow.num_levels)
 
-	LOAD_GF(GF_Pickup1Strings, sizeof(char*) * gameflow.num_levels, GF_Pickup1Strings_buffer, gameflow.num_levels)
-	LOAD_GF(GF_Pickup2Strings, sizeof(char*) * gameflow.num_levels, GF_Pickup2Strings_buffer, gameflow.num_levels)
+    LOAD_GF(GF_Pickup1Strings, sizeof(char*) * gameflow.num_levels, GF_Pickup1Strings_buffer, gameflow.num_levels)
+    LOAD_GF(GF_Pickup2Strings, sizeof(char*) * gameflow.num_levels, GF_Pickup2Strings_buffer, gameflow.num_levels)
 
-	LOAD_GF(GF_Key1Strings, sizeof(char*) * gameflow.num_levels, GF_Key1Strings_buffer, gameflow.num_levels)
-	LOAD_GF(GF_Key2Strings, sizeof(char*) * gameflow.num_levels, GF_Key2Strings_buffer, gameflow.num_levels)
-	LOAD_GF(GF_Key3Strings, sizeof(char*) * gameflow.num_levels, GF_Key3Strings_buffer, gameflow.num_levels)
-	LOAD_GF(GF_Key4Strings, sizeof(char*) * gameflow.num_levels, GF_Key4Strings_buffer, gameflow.num_levels)
+    LOAD_GF(GF_Key1Strings, sizeof(char*) * gameflow.num_levels, GF_Key1Strings_buffer, gameflow.num_levels)
+    LOAD_GF(GF_Key2Strings, sizeof(char*) * gameflow.num_levels, GF_Key2Strings_buffer, gameflow.num_levels)
+    LOAD_GF(GF_Key3Strings, sizeof(char*) * gameflow.num_levels, GF_Key3Strings_buffer, gameflow.num_levels)
+    LOAD_GF(GF_Key4Strings, sizeof(char*) * gameflow.num_levels, GF_Key4Strings_buffer, gameflow.num_levels)
 
-	CloseHandle(file);
+    CloseHandle(file);
 
-//	OutputScript();
+//  OutputScript();
 
-	return 1;
+    return 1;
 }

@@ -6,7 +6,9 @@
 #include "../specific/winmain.h"
 #include "../specific/output.h"
 #include "../tomb3/tomb3.h"
-
+extern PHDTEXTURESTRUCT phdtextinfo[MAX_TINFOS];
+extern PHDSPRITESTRUCT phdspriteinfo[512];
+extern uchar G_GouraudPalette[1024];
 ulong TextLight[12] =
 {
 	0xFFFFFF,

@@ -12,7 +12,7 @@
 #include "lara.h"
 #include "inventry.h"
 #include "../newstuff/map.h"
-
+extern short* floor_data;
 void ShiftItem(ITEM_INFO* item, COLL_INFO* coll)
 {
 	item->pos.x_pos += coll->shift.x;

@@ -26,6 +26,7 @@
 #include "../tomb3/tomb3.h"
 #include "sdl_keymap.h"
 
+extern short* commands;
 void(*extra_control_routines[13])(ITEM_INFO* item, COLL_INFO* coll) =
 {
 	extra_as_breath,

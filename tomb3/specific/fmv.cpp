@@ -6,235 +6,229 @@
 #include "input.h"
 #include "audio.h"
 #include "../tomb3/tomb3.h"
+#include <SDL.h>
+#include <SDL2/SDL_mixer.h>
 
 long fmv_playing;
 
-static LPVOID MovieContext;
-static LPVOID FmvContext;
-static LPVOID FmvSoundContext;
+// Struttura per gestire il contesto del video
+struct FMVContext {
+    SDL_Window* window;
+    SDL_Renderer* renderer;
+    SDL_Texture* texture;
+    int width;
+    int height;
+    bool isFullscreen;
+};
 
-#define GET_DLL_PROC(dll, proc) \
-{ \
-	*(FARPROC*)&(proc) = GetProcAddress(dll, #proc); \
-	if(!proc) throw #proc; \
+static FMVContext* fmvContext = nullptr;
+
+// Dichiarazioni forward delle funzioni
+bool InitSDLForFMV();
+void CleanupSDLForFMV();
+void PlayFMV(const char* name);
+void StopFMV();
+
+bool InitSDLForFMV()
+{
+    // Inizializza SDL se non è già inizializzato
+    if (SDL_WasInit(SDL_INIT_VIDEO) == 0) {
+        if (SDL_InitSubSystem(SDL_INIT_VIDEO) < 0) {
+            return false;
+        }
+    }
+    
+    if (SDL_WasInit(SDL_INIT_AUDIO) == 0) {
+        if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0) {
+            return false;
+        }
+    }
+    
+    // Inizializza SDL_mixer
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        return false;
+    }
+    
+    return true;
 }
 
-#if (DIRECT3D_VERSION < 0x900)
-static long(__cdecl* Player_PassInDirectDrawObject)(LPDIRECTDRAWX);
-#endif
-static long(__cdecl* Player_InitMovie)(LPVOID, long, long, const char*, long);
-static long(__cdecl* Player_InitVideo)(LPVOID, LPVOID, long, long, long, long, long, long, long, long, long, long, long);
-static long(__cdecl* Player_InitPlaybackMode)(HWND, LPVOID, long, long);
-static long(__cdecl* Player_BlankScreen)(long, long, long, long);
-static long(__cdecl* Player_InitSoundSystem)(HWND);
-static long(__cdecl* Player_GetDSErrorCode)();
-static long(__cdecl* Player_InitSound)(LPVOID, long, long, long, long, long, long, long, long);
-static long(__cdecl* Player_SetVolume)(LPVOID, long);
-static long(__cdecl* Player_InitMoviePlayback)(LPVOID, LPVOID, LPVOID);
-static long(__cdecl* Player_StartTimer)(LPVOID);
-static long(__cdecl* Player_StopTimer)(LPVOID);
-static long(__cdecl* Player_PlayFrame)(LPVOID, LPVOID, LPVOID, long, LPRECT, long, long, long);
-static long(__cdecl* Player_ShutDownMovie)(LPVOID);
-static long(__cdecl* Player_ShutDownSound)(LPVOID);
-static long(__cdecl* Player_ShutDownSoundSystem)();
-static long(__cdecl* Player_ShutDownVideo)(LPVOID);
-static long(__cdecl* Player_ReturnPlaybackMode)();
-
-static long(__cdecl* Movie_GetFormat)(LPVOID);
-static long(__cdecl* Movie_GetXSize)(LPVOID);
-static long(__cdecl* Movie_GetYSize)(LPVOID);
-static long(__cdecl* Movie_GetSoundPrecision)(LPVOID);
-static long(__cdecl* Movie_GetSoundRate)(LPVOID);
-static long(__cdecl* Movie_GetSoundChannels)(LPVOID);
-static long(__cdecl* Movie_SetSyncAdjust)(LPVOID, LPVOID, long);
-static long(__cdecl* Movie_GetCurrentFrame)(LPVOID);
-static long(__cdecl* Movie_GetTotalFrames)(LPVOID);
-
-static HMODULE hWinPlay;
-
-bool LoadWinPlay()
+void CleanupSDLForFMV()
 {
-	hWinPlay = LoadLibrary("WINPLAY.DLL");
-
-	if (!hWinPlay)
-		return 0;
-
-	try
-	{
-#if (DIRECT3D_VERSION < 0x900)
-		GET_DLL_PROC(hWinPlay, Player_PassInDirectDrawObject);
-#endif
-		GET_DLL_PROC(hWinPlay, Player_InitMovie);
-		GET_DLL_PROC(hWinPlay, Player_InitVideo);
-		GET_DLL_PROC(hWinPlay, Player_InitPlaybackMode);
-		GET_DLL_PROC(hWinPlay, Player_BlankScreen);
-		GET_DLL_PROC(hWinPlay, Player_InitSoundSystem);
-		GET_DLL_PROC(hWinPlay, Player_GetDSErrorCode);
-		GET_DLL_PROC(hWinPlay, Player_InitSound);
-		GET_DLL_PROC(hWinPlay, Player_SetVolume);
-		GET_DLL_PROC(hWinPlay, Player_InitMoviePlayback);
-		GET_DLL_PROC(hWinPlay, Player_StartTimer);
-		GET_DLL_PROC(hWinPlay, Player_StopTimer);
-		GET_DLL_PROC(hWinPlay, Player_PlayFrame);
-		GET_DLL_PROC(hWinPlay, Player_ShutDownMovie);
-		GET_DLL_PROC(hWinPlay, Player_ShutDownSound);
-		GET_DLL_PROC(hWinPlay, Player_ShutDownSoundSystem);
-		GET_DLL_PROC(hWinPlay, Player_ShutDownVideo);
-		GET_DLL_PROC(hWinPlay, Player_ReturnPlaybackMode);
-
-		GET_DLL_PROC(hWinPlay, Movie_GetFormat);
-		GET_DLL_PROC(hWinPlay, Movie_GetXSize);
-		GET_DLL_PROC(hWinPlay, Movie_GetYSize);
-		GET_DLL_PROC(hWinPlay, Movie_GetSoundPrecision);
-		GET_DLL_PROC(hWinPlay, Movie_GetSoundRate);
-		GET_DLL_PROC(hWinPlay, Movie_GetSoundChannels);
-		GET_DLL_PROC(hWinPlay, Movie_SetSyncAdjust);
-		GET_DLL_PROC(hWinPlay, Movie_GetCurrentFrame);
-		GET_DLL_PROC(hWinPlay, Movie_GetTotalFrames);
-	}
-	catch (LPCTSTR)
-	{
-		FreeLibrary(hWinPlay);
-		hWinPlay = 0;
-		return 0;
-	}
-
-	return 1;
-}
-
-void FreeWinPlay()
-{
-	if (hWinPlay)
-	{
-		FreeLibrary(hWinPlay);
-		hWinPlay = 0;
-	}
+    if (fmvContext) {
+        if (fmvContext->texture) SDL_DestroyTexture(fmvContext->texture);
+        if (fmvContext->renderer && !fmvContext->isFullscreen) {
+            SDL_DestroyRenderer(fmvContext->renderer);
+        }
+        if (fmvContext->window && !fmvContext->isFullscreen) {
+            SDL_DestroyWindow(fmvContext->window);
+        }
+        delete fmvContext;
+        fmvContext = nullptr;
+    }
+    
+    Mix_CloseAudio();
 }
 
 long FMV_Play(char* name)
 {
-#if (DIRECT3D_VERSION >= 0x900)
-	return 0;
-#endif
+    if (!InitSDLForFMV())
+        return 0;
 
-	if (App.Windowed || !App.WinPlayLoaded)
-		return 0;
+    fmv_playing = 1;
+    S_CDStop();
+    SDL_ShowCursor(SDL_DISABLE);
+    
+    // Riproduci il video
+    PlayFMV(GetFullPath(name));
+    
+    // Ripristina il sistema
+    StopFMV();
+    fmv_playing = 0;
 
-	fmv_playing = 1;
-	S_CDStop();
-	ShowCursor(0);
-	WinFreeDX(0);
-	WinPlayFMV(GetFullPath(name), 1);
-	WinStopFMV(1);
-	fmv_playing = 0;
-
-	if (!GtWindowClosed)
-		WinDXInit(&App.DeviceInfo, &App.DXConfig, 0);
-
-	ShowCursor(1);
-	return GtWindowClosed;
+    SDL_ShowCursor(SDL_ENABLE);
+    CleanupSDLForFMV();
+    return 0;
 }
 
 long FMV_PlayIntro(char* name1, char* name2)
 {
-#if (DIRECT3D_VERSION >= 0x900)
-	return 0;
-#endif
+    if (!InitSDLForFMV())
+        return 0;
 
-	if (App.Windowed || !App.WinPlayLoaded)
-		return 0;
+    fmv_playing = 1;
+    SDL_ShowCursor(SDL_DISABLE);
+    
+    PlayFMV(GetFullPath(name1));
+    StopFMV();
+    PlayFMV(GetFullPath(name2));
+    StopFMV();
+    
+    fmv_playing = 0;
 
-	fmv_playing = 1;
-	ShowCursor(0);
-	WinFreeDX(0);
-	WinPlayFMV(GetFullPath(name1), 1);
-	WinStopFMV(1);
-	WinPlayFMV(GetFullPath(name2), 1);
-	WinStopFMV(1);
-	fmv_playing = 0;
-
-	if (!GtWindowClosed)
-		WinDXInit(&App.DeviceInfo, &App.DXConfig, 0);
-
-	ShowCursor(1);
-	return GtWindowClosed;
+    SDL_ShowCursor(SDL_ENABLE);
+    CleanupSDLForFMV();
+    return 0;
 }
 
+void PlayFMV(const char* name)
+{
+    // Crea una nuova finestra dedicata per il FMV
+    fmvContext = new FMVContext();
+    
+    fmvContext->window = SDL_CreateWindow("Tomb Raider III - FMV",
+                                        SDL_WINDOWPOS_CENTERED,
+                                        SDL_WINDOWPOS_CENTERED,
+                                        640, 480,
+                                        SDL_WINDOW_SHOWN);
+    
+    if (!fmvContext->window) {
+        delete fmvContext;
+        fmvContext = nullptr;
+        return;
+    }
+    
+    fmvContext->renderer = SDL_CreateRenderer(fmvContext->window, -1, 
+                                            SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    
+    if (!fmvContext->renderer) {
+        SDL_DestroyWindow(fmvContext->window);
+        delete fmvContext;
+        fmvContext = nullptr;
+        return;
+    }
+    
+    fmvContext->isFullscreen = false;
+    fmvContext->width = 640;
+    fmvContext->height = 480;
+    
+    // Crea una texture di placeholder per il video
+    SDL_Surface* placeholder = SDL_CreateRGBSurface(0, 640, 480, 32, 
+                                                    0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+    
+    if (placeholder) {
+        // Crea uno sfondo blu scuro
+        SDL_FillRect(placeholder, NULL, SDL_MapRGB(placeholder->format, 0, 0, 64));
+        
+        // Disegna un rettangolo centrale per il messaggio
+        SDL_Rect messageRect = {200, 200, 240, 80};
+        SDL_FillRect(placeholder, &messageRect, SDL_MapRGB(placeholder->format, 0, 0, 128));
+        
+        // Disegna un bordo attorno al messaggio
+        SDL_Rect borderRect = {198, 198, 244, 84};
+        SDL_FillRect(placeholder, &borderRect, SDL_MapRGB(placeholder->format, 255, 255, 0));
+        
+        fmvContext->texture = SDL_CreateTextureFromSurface(fmvContext->renderer, placeholder);
+        SDL_FreeSurface(placeholder);
+    }
+    
+    // Loop di riproduzione
+    SDL_Event event;
+    bool quit = false;
+    Uint32 startTime = SDL_GetTicks();
+    Uint32 frameTime = 1000 / 25; // 25 FPS per i FMV
+    
+    while (!quit) {
+        Uint32 currentTime = SDL_GetTicks();
+        Uint32 elapsedTime = currentTime - startTime;
+        
+        // Esci dopo 10 secondi o se viene premuto un tasto
+        if (elapsedTime > 10000) {
+            break;
+        }
+        
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT || 
+                event.type == SDL_KEYDOWN ||
+                event.type == SDL_MOUSEBUTTONDOWN) {
+                quit = true;
+            }
+        }
+        
+        // Aggiorna input del gioco - usa solo IN_OPTION che dovrebbe esistere
+        if (S_UpdateInput() || (input & IN_OPTION)) {
+            quit = true;
+        }
+        
+        // Renderizza il frame
+        SDL_SetRenderDrawColor(fmvContext->renderer, 0, 0, 0, 255);
+        SDL_RenderClear(fmvContext->renderer);
+        
+        if (fmvContext->texture) {
+            SDL_RenderCopy(fmvContext->renderer, fmvContext->texture, NULL, NULL);
+        }
+        
+        // Disegna il messaggio di placeholder usando primitive SDL
+        SDL_Rect messageBg = {200, 200, 240, 80};
+        SDL_SetRenderDrawColor(fmvContext->renderer, 0, 0, 128, 255);
+        SDL_RenderFillRect(fmvContext->renderer, &messageBg);
+        
+        SDL_Rect messageBorder = {198, 198, 244, 84};
+        SDL_SetRenderDrawColor(fmvContext->renderer, 255, 255, 0, 255);
+        SDL_RenderDrawRect(fmvContext->renderer, &messageBorder);
+        
+        // Aggiungi un indicatore di progressione
+        SDL_Rect progressBar = {100, 450, (int)(440 * (elapsedTime / 10000.0f)), 20};
+        SDL_SetRenderDrawColor(fmvContext->renderer, 255, 255, 0, 255);
+        SDL_RenderFillRect(fmvContext->renderer, &progressBar);
+        
+        SDL_RenderPresent(fmvContext->renderer);
+        
+        SDL_Delay(frameTime);
+    }
+}
+
+void StopFMV()
+{
+    CleanupSDLForFMV();
+}
+
+// Funzioni stub per mantenere la compatibilità
 void WinPlayFMV(const char* name, bool play)
 {
-	long xSize, ySize, xOffset, yOffset;
-	long lp;
-	RECT r;
-
-#if (DIRECT3D_VERSION >= 0x900)
-	return;
-#endif
-
-	r.left = 0;
-	r.top = 0;
-	r.right = 640;
-	r.bottom = 480;
-
-#if (DIRECT3D_VERSION < 0x900)
-	if (Player_PassInDirectDrawObject(App.DDraw) || Player_InitMovie(&MovieContext, 0, 0, name, 0x200000) || Movie_GetFormat(MovieContext) != 130)
-		return;
-#endif
-
-	xSize = Movie_GetXSize(MovieContext);
-	ySize = Movie_GetYSize(MovieContext);
-	xOffset = 0;// 320 - Movie_GetXSize(MovieContext);
-	yOffset = 240 - Movie_GetYSize(MovieContext);
-
-	if (Player_InitVideo(&FmvContext, MovieContext, xSize, ySize, xOffset, yOffset, 0, 0, 640, 480, 0, 1, 13) ||
-		(play && Player_InitPlaybackMode(App.WindowHandle, FmvContext, 1, 0)))
-		return;
-
-	Player_BlankScreen(r.left, r.top, r.right, r.bottom);
-
-	if (Player_InitSoundSystem(App.WindowHandle) || FAILED(Player_GetDSErrorCode()))
-		return;
-
-	if (Player_InitSound(&FmvSoundContext, 0x4000, Movie_GetSoundPrecision(MovieContext) == 4 ? 4 : 1,
-		Movie_GetSoundPrecision(MovieContext) != 4, 4096, Movie_GetSoundChannels(MovieContext), Movie_GetSoundRate(MovieContext),
-		Movie_GetSoundPrecision(MovieContext), 2))
-		return;
-
-	Player_SetVolume(FmvSoundContext, acm_volume);
-	Movie_SetSyncAdjust(MovieContext, FmvSoundContext, 4);
-
-	if (Player_InitMoviePlayback(MovieContext, FmvContext, FmvSoundContext))
-		return;
-
-	S_UpdateInput();
-	Player_StartTimer(MovieContext);
-	Player_BlankScreen(r.left, r.top, r.right, r.bottom);
-	S_UpdateInput();
-
-	lp = 0;
-
-	while (Movie_GetCurrentFrame(MovieContext) < Movie_GetTotalFrames(MovieContext) && !lp)
-	{
-		lp = Player_PlayFrame(MovieContext, FmvContext, FmvSoundContext, 0, &r, 0, 0, 0);
-
-		if (S_UpdateInput())
-			break;
-
-		if (input & IN_OPTION)
-			break;
-	}
+    PlayFMV(name);
 }
 
 void WinStopFMV(bool play)
 {
-#if (DIRECT3D_VERSION >= 0x900)
-	return;
-#endif
-	Player_StopTimer(MovieContext);
-	Player_ShutDownSound(&FmvSoundContext);
-	Player_ShutDownVideo(&FmvContext);
-	Player_ShutDownMovie(&MovieContext);
-	Player_ShutDownSoundSystem();
-
-	if (play)
-		Player_ReturnPlaybackMode();
+    StopFMV();
 }

@@ -1,41 +1,50 @@
 #pragma once
 #include "../global/types.h"
+#include <SDL.h>
 
-long MyReadFile(void* hFile, void* lpBuffer, ulong nNumberOfBytesToRead, ulong* lpNumberOfBytesRead, void* lpOverlapped);
-bool LoadPalette(void* file);
-long LoadTexturePages(void* file);
-long LoadRooms(void* file);
-long LoadObjects(void* file);
-long LoadSprites(void* file);
-long LoadCameras(void* file);
-long LoadSoundEffects(void* file);
-long LoadBoxes(void* file);
-long LoadAnimatedTextures(void* file);
-long LoadItems(void* file);
-long LoadDepthQ(void* file);
-long LoadCinematic(void* file);
-long LoadDemo(void* file);
-long LoadSamples(void* file);
-void LoadDemFile(const char* name);
-long LoadLevel(const char* name, long number);
-void S_UnloadLevelFile();
-long S_LoadLevelFile(char* name, long number, long type);
+// Forward declarations
+struct DEVICEINFO;
+struct DXCONFIG;
+
+// Define Windows types for compatibility
+typedef SDL_RWops* HANDLE;
+typedef void* LPVOID;
+typedef void* LPOVERLAPPED;
+typedef SDL_RWops* FILE_HANDLE;
+
+// Windows constants
+#define GMEM_FIXED 0
+#define GENERIC_READ 0
+#define OPEN_EXISTING 0
+#define FILE_ATTRIBUTE_NORMAL 0
+#define FILE_FLAG_SEQUENTIAL_SCAN 0
+#define INVALID_HANDLE_VALUE nullptr
+#define FILE_CURRENT SEEK_CUR
+
+// Define WAVEFORMATEX structure for audio
+typedef struct {
+    unsigned short wFormatTag;
+    unsigned short nChannels;
+    unsigned long nSamplesPerSec;
+    unsigned long nAvgBytesPerSec;
+    unsigned short nBlockAlign;
+    unsigned short wBitsPerSample;
+    unsigned short cbSize;
+} WAVEFORMATEX;
+typedef WAVEFORMATEX* LPWAVEFORMATEX;
+
+// Windows functions replacements
+void* GlobalAlloc(int flags, size_t size);
+void GlobalFree(void* ptr);
+HANDLE CreateFile(const char* filename, int access, int share, void* security, int creation, int attributes, void* template_file);
+bool ReadFile(HANDLE file, void* buffer, size_t size, size_t* bytes_read, void* overlapped);
+bool SetFilePointer(HANDLE file, long distance, long* distance_high, int method);
+bool CloseHandle(HANDLE file);
+void lstrcpy(char* dest, const char* src);
+void wsprintf(char* dest, const char* format, ...);
+
+// Additional function declarations
+void AdjustTextureUVs(bool reset);
 const char* GetFullPath(const char* name);
 void build_ext(char* name, const char* ext);
-void AdjustTextureUVs(bool reset);
-long Read_Strings(long num, char** strings, char** buffer, ulong* read, void* file);
-long S_LoadGameFlow(const char* name);
-
-extern CHANGE_STRUCT* changes;
-extern RANGE_STRUCT* ranges;
-extern short* aranges;
-extern short* frames;
-extern short* commands;
-extern short* floor_data;
-extern short* mesh_base;
-extern long number_cameras;
-extern long nTInfos;
-
-extern PHDTEXTURESTRUCT phdtextinfo[MAX_TINFOS];
-extern PHDSPRITESTRUCT phdspriteinfo[512];
-extern uchar G_GouraudPalette[1024];
+long Read_Strings(long num, char** strings, char** buffer, ulong* read, HANDLE file);

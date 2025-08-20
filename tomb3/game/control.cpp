@@ -31,7 +31,15 @@
 #include "health.h"
 #include "../newstuff/pausemenu.h"
 #include "../newstuff/discord.h"
-
+extern short* floor_data;
+extern short* commands;
+extern CHANGE_STRUCT* changes;
+extern RANGE_STRUCT* ranges;
+extern PHDTEXTURESTRUCT phdtextinfo[MAX_TINFOS];
+extern PHDSPRITESTRUCT phdspriteinfo[512];
+extern uchar G_GouraudPalette[1024];
+extern short* mesh_base;
+extern short* frames;
 ITEM_INFO* items;
 ANIM_STRUCT* anims;
 ROOM_INFO* room;

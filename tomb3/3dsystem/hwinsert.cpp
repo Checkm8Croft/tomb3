@@ -19,6 +19,9 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 
+extern PHDTEXTURESTRUCT phdtextinfo[MAX_TINFOS];
+extern PHDSPRITESTRUCT phdspriteinfo[512];
+extern uchar G_GouraudPalette[1024];
 void DrawGLTriangles(GLVERTEX* vtx, long nVtx) {
     // Crea e bind un VAO
     static GLuint vao = 0;
