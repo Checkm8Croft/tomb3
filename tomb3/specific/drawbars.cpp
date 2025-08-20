@@ -9,6 +9,9 @@
 #include "../game/control.h"
 #include "../tomb3/tomb3.h"
 
+// Variabile globale per tracciare lo stato dello Z-buffer
+static bool gZBufferEnabled = true;
+
 static ulong InterpolateColor(ulong col0, ulong col1, ulong value, ulong range)
 {
 	uchar* c0;
@@ -23,9 +26,9 @@ static ulong InterpolateColor(ulong col0, ulong col1, ulong value, ulong range)
 		return col1;
 
 	result = 0;
-	c0 = (BYTE*)&col0;
-	c1 = (BYTE*)&col1;
-	res = (BYTE*)&result;
+	c0 = (uchar*)&col0;
+	c1 = (uchar*)&col1;
+	res = (uchar*)&result;
 
 	for (int i = 0; i < 4; i++)
 		res[i] = uchar((ulong)c0[i] * (range - value) / range + (ulong)c1[i] * value / range);
@@ -35,7 +38,7 @@ static ulong InterpolateColor(ulong col0, ulong col1, ulong value, ulong range)
 
 static void DrawColoredRect(long x0, long y0, long x1, long y1, long z, ulong c0, ulong c1, ulong c2, ulong c3)
 {
-	D3DTLVERTEX v[4];
+	GLVERTEX v[4];
 	float zv, fz;
 
 	zv = one / (float)z;
@@ -62,17 +65,24 @@ static void DrawColoredRect(long x0, long y0, long x1, long y1, long z, ulong c0
 		v[i].sz = fz;
 		v[i].rhw = zv;
 		v[i].specular = 0;
+		v[i].tu = 0.0f;
+		v[i].tv = 0.0f;
 	}
 
 	HWR_SetCurrentTexture(0);
 	HWR_EnableColorAddition(0);
-#if (DIRECT3D_VERSION >= 0x900)
 	HWR_EnableAlphaBlend(1);
-	DrawPrimitive(D3DPT_TRIANGLESTRIP, v, 4);
-#else
-	HWR_EnableColorKey(1);
-	DrawPrimitive(D3DPT_TRIANGLESTRIP, D3DVT_TLVERTEX, v, 4, D3DDP_DONOTCLIP | D3DDP_DONOTUPDATEEXTENTS);
-#endif
+	
+	// Usa la funzione OpenGL per disegnare primitive
+	glBegin(GL_TRIANGLE_STRIP);
+	for (int i = 0; i < 4; i++)
+	{
+		glColor4ub(RGBA_GETRED(v[i].color), RGBA_GETGREEN(v[i].color), 
+				  RGBA_GETBLUE(v[i].color), RGBA_GETALPHA(v[i].color));
+		glTexCoord2f(v[i].tu, v[i].tv);
+		glVertex3f(v[i].sx, v[i].sy, v[i].sz);
+	}
+	glEnd();
 }
 
 static void DrawPSXBar(long x0, long y0, long x1, long y1, long bar, long p, ulong* l, ulong* r, ulong* f)
@@ -215,6 +225,20 @@ void DoPSXColdBar(long x0, long y0, long x1, long y1, long bar, long p)
 	DrawPSXBar(x0, y0, x1, y1, bar, p, l, r, f);
 }
 
+// Funzione per impostare lo stato dello Z-buffer
+void SetZBufferEnabled(bool enabled)
+{
+    gZBufferEnabled = enabled;
+}
+
+// Funzione per verificare se lo Z-buffer è abilitato
+static bool IsZBufferEnabled()
+{
+    // In OpenGL, assumiamo che lo Z-buffer sia sempre abilitato in modalità hardware
+    // Puoi modificare questa logica in base alle tue esigenze specifiche
+    return gZBufferEnabled;
+}
+
 void S_DrawHealthBar(long percent)
 {
 	long w, h, xs, ys, p, x0, y0, x1, y1, bar;
@@ -253,7 +277,7 @@ void S_DrawHealthBar(long percent)
 
 	if (tomb3.bar_mode == BAR_PSX)
 	{
-		if (App.lpDXConfig->bZBuffer)
+		if (IsZBufferEnabled())
 			DoPSXHealthBar(x0, y0, x1, y1, bar, p);
 		else
 			InsertPSXBar(POLYTYPE_HEALTHBAR, x0, y0, x1, y1, bar, p);
@@ -313,7 +337,7 @@ void S_DrawDashBar(long percent)
 
 	if (tomb3.bar_mode == BAR_PSX)
 	{
-		if (App.lpDXConfig->bZBuffer)
+		if (IsZBufferEnabled())
 			DoPSXDashBar(x0, y0, x1, y1, bar, p);
 		else
 			InsertPSXBar(POLYTYPE_DASHBAR, x0, y0, x1, y1, bar, p);
@@ -365,7 +389,7 @@ void S_DrawAirBar(long percent)
 
 	if (tomb3.bar_mode == BAR_PSX)
 	{
-		if (App.lpDXConfig->bZBuffer)
+		if (IsZBufferEnabled())
 			DoPSXAirBar(x0, y0, x1, y1, bar, p);
 		else
 			InsertPSXBar(POLYTYPE_AIRBAR, x0, y0, x1, y1, bar, p);
@@ -422,7 +446,7 @@ void S_DrawColdBar(long percent)
 
 	if (tomb3.bar_mode == BAR_PSX)
 	{
-		if (App.lpDXConfig->bZBuffer)
+		if (IsZBufferEnabled())
 			DoPSXColdBar(x0, y0, x1, y1, bar, p);
 		else
 			InsertPSXBar(POLYTYPE_COLDBAR, x0, y0, x1, y1, bar, p);

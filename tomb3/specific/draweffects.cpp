@@ -28,6 +28,8 @@
 #include "../game/gameflow.h"
 #include "../newstuff/LaraDraw.h"
 #include "../tomb3/tomb3.h"
+#include "../global/types.h"
+#include <SDL2/SDL.h>
 
 static BITE_INFO NodeOffsets[16] =
 {
@@ -329,11 +331,6 @@ void LaraElectricDeath(long lr, ITEM_INFO* item)
 	long w, h, nDs, mesh1, mesh2, x, y, z, xStep, yStep, zStep, pX, pY, pZ;
 	long x1, y1, x2, y2, c0, c1;
 
-#if (DIRECT3D_VERSION >= 0x900)
-	dm = &App.lpDeviceInfo->D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#else
-	dm = &App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#endif
 	w = dm->w - 1;
 	h = dm->h - 1;
 	phd_PushMatrix();
@@ -630,11 +627,6 @@ void S_DrawWakeFX(ITEM_INFO* item)
 	long x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, c12, c34, cval;
 	long offsets[2][2];
 
-#if (DIRECT3D_VERSION >= 0x900)
-	dm = &App.lpDeviceInfo->D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#else
-	dm = &App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#endif
 	w = dm->w - 1;
 	h = dm->h - 1;
 	offsets[0][0] = -128;
@@ -998,11 +990,6 @@ void DoSnow()
 	ushort u1, v1, u2, v2;
 	char clipFlag;
 
-#if (DIRECT3D_VERSION >= 0x900)
-	dm = &App.lpDeviceInfo->D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#else
-	dm = &App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#endif
 	w = dm->w;
 	h = dm->h;
 	bBlueEffect = 0;
@@ -1246,11 +1233,6 @@ void DrawExplosionRings()
 	long xv1, yv1, xv2, yv2, xv3, yv3, xv4, yv4;
 	ushort u1, u2, v1, v2;
 
-#if (DIRECT3D_VERSION >= 0x900)
-	dm = &App.lpDeviceInfo->D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#else
-	dm = &App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#endif
 	w = dm->w - 1;
 	h = dm->h - 1;
 
@@ -1476,12 +1458,6 @@ void DrawSummonRings()
 	long x1, x2, x3, x4, y1, y2, y3, y4, z1, z2, z3, z4, col1, col2, col3, col4;
 	long xv1, yv1, xv2, yv2, xv3, yv3, xv4, yv4;
 	ushort u1, u2, v1, v2;
-
-#if (DIRECT3D_VERSION >= 0x900)
-	dm = &App.lpDeviceInfo->D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#else
-	dm = &App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#endif
 	w = dm->w - 1;
 	h = dm->h - 1;
 
@@ -1736,11 +1712,6 @@ void DrawKnockBackRings()
 	long xv1, yv1, xv2, yv2, xv3, yv3, xv4, yv4;
 	ushort u1, u2, v1, v2;
 
-#if (DIRECT3D_VERSION >= 0x900)
-	dm = &App.lpDeviceInfo->D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#else
-	dm = &App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#endif
 	w = dm->w - 1;
 	h = dm->h - 1;
 
@@ -1973,11 +1944,6 @@ void TriggerElectricBeam(ITEM_INFO* item, GAME_VECTOR* src, long copy)
 	long x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, c1, c2, c3, c4, r, g, b;
 	short angle;
 
-#if (DIRECT3D_VERSION >= 0x900)
-	dm = &App.lpDeviceInfo->D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#else
-	dm = &App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#endif
 	w = dm->w - 1;
 	h = dm->h - 1;
 
@@ -2256,11 +2222,6 @@ void TriggerTribeBossHeadElectricity(ITEM_INFO* item, long copy)
 	long w, h, dx, dy, dz, s, x, y, z, tx, ty, tz, ex, ey, ez, vx, vy, vz;
 	long x1, y1, x2, y2, c1, c2, alpha;
 
-#if (DIRECT3D_VERSION >= 0x900)
-	dm = &App.lpDeviceInfo->D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#else
-	dm = &App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#endif
 	w = dm->w - 1;
 	h = dm->h - 1;
 	dx = lara_item->pos.x_pos - item->pos.x_pos;
@@ -2691,11 +2652,6 @@ void DrawTonyBossShield(ITEM_INFO* item)
 	long xv1, yv1, xv2, yv2, xv3, yv3, xv4, yv4;
 	ushort u1, v1, u2, v2;
 
-#if (DIRECT3D_VERSION >= 0x900)
-	dm = &App.lpDeviceInfo->D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#else
-	dm = &App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#endif
 	w = dm->w - 1;
 	h = dm->h - 1;
 
@@ -2884,11 +2840,6 @@ void DrawTribeBossShield(ITEM_INFO* item)
 	long xv1, yv1, xv2, yv2, xv3, yv3, xv4, yv4;
 	ushort u1, v1, u2, v2;
 
-#if (DIRECT3D_VERSION >= 0x900)
-	dm = &App.lpDeviceInfo->D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#else
-	dm = &App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#endif
 	w = dm->w - 1;
 	h = dm->h - 1;
 
@@ -3076,11 +3027,6 @@ void DrawLondonBossShield(ITEM_INFO* item)
 	long xv1, yv1, xv2, yv2, xv3, yv3, xv4, yv4;
 	ushort u1, v1, u2, v2;
 
-#if (DIRECT3D_VERSION >= 0x900)
-	dm = &App.lpDeviceInfo->D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#else
-	dm = &App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#endif
 	w = dm->w - 1;
 	h = dm->h - 1;
 
@@ -3267,11 +3213,6 @@ void DrawWillBossShield(ITEM_INFO* item)
 	long xv1, yv1, xv2, yv2, xv3, yv3, xv4, yv4;
 	ushort u1, v1, u2, v2;
 
-#if (DIRECT3D_VERSION >= 0x900)
-	dm = &App.lpDeviceInfo->D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#else
-	dm = &App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#endif
 	w = dm->w - 1;
 	h = dm->h - 1;
 
@@ -3447,11 +3388,6 @@ void S_DrawLaserBeam(GAME_VECTOR* src, GAME_VECTOR* dest, uchar cr, uchar cg, uc
 	long pos[3];
 
 	UpdateLaserShades();
-#if (DIRECT3D_VERSION >= 0x900)
-	dm = &App.lpDeviceInfo->D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#else
-	dm = &App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#endif
 	w = dm->w - 1;
 	h = dm->h - 1;
 
@@ -3584,11 +3520,6 @@ void S_DrawBat()
 	long x1, y1, z1, x2, y2, z2, x3, y3, z3;
 	ushort u1, v1, u2, v2;
 
-#if (DIRECT3D_VERSION >= 0x900)
-	dm = &App.lpDeviceInfo->D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#else
-	dm = &App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#endif
 	w = dm->w;
 	h = dm->h;
 	pXY = (long*)&scratchpad[0];
@@ -3716,11 +3647,6 @@ void S_DrawSparks()
 	long vpos[3][3];
 	long point[3];
 
-#if (DIRECT3D_VERSION >= 0x900)
-	dm = &App.lpDeviceInfo->D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#else
-	dm = &App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#endif
 	w = dm->w;
 	h = dm->h;
 
@@ -4074,11 +4000,6 @@ void S_DrawSplashes()
 	long w, h, nSprite, linkNum, n;
 	long pos[3];
 
-#if (DIRECT3D_VERSION >= 0x900)
-	dm = &App.lpDeviceInfo->D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#else
-	dm = &App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#endif
 	w = dm->w;
 	h = dm->h;
 
@@ -4302,11 +4223,6 @@ void S_DrawLaserBolts(ITEM_INFO* item)
 	long w, h, speed, px, py, pz, d, x, y, z, xStep, yStep, zStep, num, linkNum;
 	long x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, c12, c34, r, g, b, c0, c1;
 
-#if (DIRECT3D_VERSION >= 0x900)
-	dm = &App.lpDeviceInfo->D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#else
-	dm = &App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#endif
 	w = dm->w - 1;
 	h = dm->h - 1;
 	speed = (item->speed * phd_cos(item->pos.x_rot)) >> W2V_SHIFT;
@@ -4531,11 +4447,6 @@ void S_DrawFish(ITEM_INFO* item)
 	long point[3];
 	ushort u1, v1, u2, v2;
 
-#if (DIRECT3D_VERSION >= 0x900)
-	dm = &App.lpDeviceInfo->D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#else
-	dm = &App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#endif
 	w = dm->w;
 	h = dm->h;
 	sx = phd_winxmin + phd_winxmax;
@@ -4667,11 +4578,6 @@ void S_DrawDarts(ITEM_INFO* item)
 	long w, h, size, x, y, z;
 	long x1, y1, z1, x2, y2, z2;
 
-#if (DIRECT3D_VERSION >= 0x900)
-	dm = &App.lpDeviceInfo->D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#else
-	dm = &App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#endif
 	w = dm->w - 1;
 	h = dm->h - 1;
 
@@ -4999,11 +4905,6 @@ void DoUwEffect()
 	long x1, y1, x2, y2, x3, y3;
 	ushort u1, v1, u2, v2;
 
-#if (DIRECT3D_VERSION >= 0x900)
-	dm = &App.lpDeviceInfo->D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#else
-	dm = &App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#endif
 	w = dm->w;
 	h = dm->h;
 	bBlueEffect = 0;
@@ -5167,11 +5068,6 @@ void S_DrawSubWakeFX(ITEM_INFO* item)
 	if (!tomb3.upv_wake)
 		return;
 
-#if (DIRECT3D_VERSION >= 0x900)
-	dm = &App.lpDeviceInfo->D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#else
-	dm = &App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#endif
 	w = dm->w - 1;
 	h = dm->h - 1;
 
