@@ -1,8 +1,9 @@
 # tomb3 using guide
+For now I'll leave this page as is, since the installation process will be the same I think
 
 ## Installing:
 
-## [Releases page](https://github.com/Trxyebeep/tomb3/releases)
+## [Releases page](https://github.com/Checkm8Croft/tomb3/releases)
 
 ### *first time installs:*
 
