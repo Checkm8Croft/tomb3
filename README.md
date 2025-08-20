@@ -15,7 +15,7 @@ I currently modified:
 - Registry.h
 - Tomb3.cpp
 - Init.h
-- Winmain.cpp and .h
+- Winmain.cpp and h
 - 3d_gen.cpp
 - Hwinsert.h and cpp
 - File.h
@@ -25,6 +25,10 @@ I currently modified:
 - Texture.h
 - Health.cpp
 - Invfunc.cpp
+- Audio.cpp and h
+- dd.cpp and h
+- di.cpp and h
+- display.cpp
 
 ### Credits:
 Checkm8Croft: For porting the project
@@ -39,3 +43,11 @@ Lahm86: for the amazing config tool.
 
 ### License:
 This project is licensed under the GNU General Public License - see the [LICENSE](https://github.com/Trxyebeep/tomb3/blob/master/LICENSE.md) file for details
+
+## (Hypothetic) Q&A
+
+Q: Which platforms supports?
+A: macOS (tested on Sequoia) Windows (tested on 11) Linux (tested on Ubuntu)
+
+Q: Will it exit a mobile version for iOS/Android?
+A: I hope it! Since is a C++ and GL/SDL project, it could be possbile. Well I could try with Xcode for iOS, I don't have an Andrioid for test the Android Version

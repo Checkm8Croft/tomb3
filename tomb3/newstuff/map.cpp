@@ -15,6 +15,7 @@
 #include "../game/lara.h"
 #include "../game/effects.h"
 #include "../specific/winmain.h"
+#include <climits>
 
 #define CAM_SPEED	128
 #define VIEW_DIST	(40 * WALL_SIZE)
@@ -418,7 +419,7 @@ void do_map_option()
 	while (!(input & IN_OPTION))
 	{
 		S_UpdateInput();
-		distanceFogValue = MAXINT32 >> W2V_SHIFT;
+		distanceFogValue = INT_MAX >> W2V_SHIFT;
 
 		for (int i = 0; i < nFrames; i++)
 		{

@@ -24,6 +24,7 @@
 #include "effect2.h"
 #include "../specific/input.h"
 #include "../tomb3/tomb3.h"
+#include "sdl_keymap.h"
 
 void(*extra_control_routines[13])(ITEM_INFO* item, COLL_INFO* coll) =
 {

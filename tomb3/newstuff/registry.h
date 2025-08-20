@@ -1,11 +1,16 @@
 #pragma once
 
 #include "../global/types.h"
-// Non serve più <string> e <unordered_map>
 
-// Config file path (puoi cambiarlo)
+// Definizione dei tipi Windows per compatibilità
+typedef const char* LPCSTR;
+typedef void* LPVOID;
+typedef unsigned long DWORD;
+
+// Config file path
 #define CONFIG_FILE "tomb3_config.txt"
 
+// Funzioni principali di configurazione
 bool OpenConfig(const char* filename);
 void CloseConfig();
 void CFG_WriteLong(const char* key, ulong value);
@@ -18,4 +23,19 @@ bool CFG_ReadString(const char* key, char* value, const char* defaultValue, int 
 bool CFG_ReadFloat(const char* key, float* value, float defaultValue);
 bool CFG_KeyWasCreated();
 
-// Puoi usare una semplice struct o array per la config invece di unordered_map
+// Funzioni di compatibilità con il registro Windows
+bool REG_OpenKey(LPCSTR lpSubKey);
+bool OpenRegistry(LPCSTR SubKeyName);
+void REG_CloseKey();
+void CloseRegistry();
+void REG_WriteLong(char* SubKeyName, ulong value);
+void REG_WriteBool(char* SubKeyName, bool value);
+void REG_WriteBlock(char* SubKeyName, LPVOID block, long size);
+void REG_WriteString(char* SubKeyName, char* string, long length);
+void REG_WriteFloat(char* SubKeyName, float value);
+bool REG_ReadLong(char* SubKeyName, ulong& value, ulong defaultValue);
+bool REG_ReadBool(char* SubKeyName, bool& value, bool defaultValue);
+bool REG_ReadBlock(char* SubKeyName, LPVOID block, long size, LPVOID dBlock);
+bool REG_ReadString(char* SubKeyName, char* value, long length, char* defaultValue);
+bool REG_ReadFloat(char* SubKeyName, float& value, float defaultValue);
+bool REG_KeyWasCreated();

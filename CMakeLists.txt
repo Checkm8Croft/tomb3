@@ -10,6 +10,10 @@ include_directories(/usr/local/include) # Forza include se serve
 
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS})
+# Per OpenAL
+find_package(OpenAL REQUIRED)
+# O per SDL_mixer
+find_package(SDL2_mixer REQUIRED)
 
 add_definitions(-D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L)
 # Include directory globale
