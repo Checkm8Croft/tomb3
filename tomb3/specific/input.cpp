@@ -16,6 +16,7 @@
 #include "smain.h"
 #include "hwrender.h"
 #include "../tomb3/tomb3.h"
+#include <SDL2/SDL.h>  // Aggiungi include SDL
 
 const char* KeyboardButtons[272] =
 {
@@ -43,13 +44,14 @@ const char* KeyboardButtons[272] =
 	"JOY9", "JOY10", "JOY11", "JOY12", "JOY13", "JOY14", "JOY15", "JOY16"
 };
 
+// Mappa i tasti DIK a SDL_SCANCODE
 short layout[2][NLAYOUTKEYS] =
 {
-	{DIK_UP, DIK_DOWN, DIK_LEFT, DIK_RIGHT, DIK_PERIOD, DIK_SLASH, DIK_RSHIFT,
-	DIK_RMENU, DIK_RCONTROL, DIK_SPACE, DIK_COMMA, DIK_NUMPAD0, DIK_END, DIK_ESCAPE, DIK_P,},
+	{SDL_SCANCODE_UP, SDL_SCANCODE_DOWN, SDL_SCANCODE_LEFT, SDL_SCANCODE_RIGHT, SDL_SCANCODE_PERIOD, SDL_SCANCODE_SLASH, SDL_SCANCODE_RSHIFT,
+	SDL_SCANCODE_RALT, SDL_SCANCODE_RCTRL, SDL_SCANCODE_SPACE, SDL_SCANCODE_COMMA, SDL_SCANCODE_KP_0, SDL_SCANCODE_END, SDL_SCANCODE_ESCAPE, SDL_SCANCODE_P,},
 
-	{DIK_NUMPAD8, DIK_NUMPAD2, DIK_NUMPAD4, DIK_NUMPAD6, DIK_DECIMAL, DIK_NUMPAD1, DIK_RSHIFT,
-	DIK_RMENU, DIK_RCONTROL, DIK_SPACE, DIK_NUMPAD5, DIK_NUMPAD0, DIK_END, DIK_ESCAPE, DIK_P}
+	{SDL_SCANCODE_KP_8, SDL_SCANCODE_KP_2, SDL_SCANCODE_KP_4, SDL_SCANCODE_KP_6, SDL_SCANCODE_KP_DECIMAL, SDL_SCANCODE_KP_1, SDL_SCANCODE_RSHIFT,
+	SDL_SCANCODE_RALT, SDL_SCANCODE_RCTRL, SDL_SCANCODE_SPACE, SDL_SCANCODE_KP_5, SDL_SCANCODE_KP_0, SDL_SCANCODE_END, SDL_SCANCODE_ESCAPE, SDL_SCANCODE_P}
 };
 
 long bLaraOn = 1;
@@ -64,34 +66,41 @@ long FinishLevelCheat;
 long conflict[15];
 uchar keymap[256];
 
+// Funzione helper per controllare se un tasto SDL è premuto
+bool sdl_key_pressed(SDL_Scancode scancode)
+{
+    const Uint8* state = SDL_GetKeyboardState(NULL);
+    return state[scancode] != 0;
+}
+
 long Key(long number)
 {
 	short key;
 
 	key = layout[1][number];
 
-	if (key_pressed(key))
+	if (sdl_key_pressed((SDL_Scancode)key))
 		return 1;
 
 	switch (key)
 	{
-	case DIK_RCONTROL:
-		return key_pressed(DIK_LCONTROL);
+	case SDL_SCANCODE_RCTRL:
+		return sdl_key_pressed(SDL_SCANCODE_LCTRL);
 
-	case DIK_LCONTROL:
-		return key_pressed(DIK_RCONTROL);
+	case SDL_SCANCODE_LCTRL:
+		return sdl_key_pressed(SDL_SCANCODE_RCTRL);
 
-	case DIK_RSHIFT:
-		return key_pressed(DIK_LSHIFT);
+	case SDL_SCANCODE_RSHIFT:
+		return sdl_key_pressed(SDL_SCANCODE_LSHIFT);
 
-	case DIK_LSHIFT:
-		return key_pressed(DIK_RSHIFT);
+	case SDL_SCANCODE_LSHIFT:
+		return sdl_key_pressed(SDL_SCANCODE_RSHIFT);
 
-	case DIK_RMENU:
-		return key_pressed(DIK_LMENU);
+	case SDL_SCANCODE_RALT:
+		return sdl_key_pressed(SDL_SCANCODE_LALT);
 
-	case DIK_LMENU:
-		return key_pressed(DIK_RMENU);
+	case SDL_SCANCODE_LALT:
+		return sdl_key_pressed(SDL_SCANCODE_RALT);
 	}
 
 	if (conflict[number])
@@ -99,28 +108,28 @@ long Key(long number)
 
 	key = layout[0][number];
 
-	if (key_pressed(key))
+	if (sdl_key_pressed((SDL_Scancode)key))
 		return 1;
 
 	switch (key)
 	{
-	case DIK_RCONTROL:
-		return key_pressed(DIK_LCONTROL);
+	case SDL_SCANCODE_RCTRL:
+		return sdl_key_pressed(SDL_SCANCODE_LCTRL);
 
-	case DIK_LCONTROL:
-		return key_pressed(DIK_RCONTROL);
+	case SDL_SCANCODE_LCTRL:
+		return sdl_key_pressed(SDL_SCANCODE_RCTRL);
 
-	case DIK_RSHIFT:
-		return key_pressed(DIK_LSHIFT);
+	case SDL_SCANCODE_RSHIFT:
+		return sdl_key_pressed(SDL_SCANCODE_LSHIFT);
 
-	case DIK_LSHIFT:
-		return key_pressed(DIK_RSHIFT);
+	case SDL_SCANCODE_LSHIFT:
+		return sdl_key_pressed(SDL_SCANCODE_RSHIFT);
 
-	case DIK_RMENU:
-		return key_pressed(DIK_LMENU);
+	case SDL_SCANCODE_RALT:
+		return sdl_key_pressed(SDL_SCANCODE_LALT);
 
-	case DIK_LMENU:
-		return key_pressed(DIK_RMENU);
+	case SDL_SCANCODE_LALT:
+		return sdl_key_pressed(SDL_SCANCODE_RALT);
 	}
 
 	return 0;
@@ -131,12 +140,24 @@ long S_UpdateInput()
 	long linput;
 	static long med_debounce = 0;
 	static bool pause_debounce = 0;
-#if (DIRECT3D_VERSION >= 0x900)
 	static bool F7_debounce = 0;
-#endif
 
-	DD_SpinMessageLoop(0);
-	DI_ReadKeyboard(keymap);
+	// Processa gli eventi SDL
+	SDL_Event event;
+	while (SDL_PollEvent(&event)) {
+		if (event.type == SDL_QUIT) {
+			return 1; // Window closed
+		}
+	}
+
+	// Leggi lo stato della tastiera SDL
+	const Uint8* sdlKeyState = SDL_GetKeyboardState(NULL);
+	
+	// Aggiorna keymap per compatibilità (se necessario)
+	for (int i = 0; i < 256; i++) {
+		keymap[i] = sdlKeyState[i] ? 0x80 : 0x00;
+	}
+
 	linput = 0;
 
 	if (Key(0))
@@ -197,7 +218,7 @@ long S_UpdateInput()
 			linput = (linput & ~IN_RIGHT) | IN_RSTEP;
 	}
 
-	if (key_pressed(DIK_MULTIPLY))
+	if (sdl_key_pressed(SDL_SCANCODE_KP_MULTIPLY))
 	{
 		farz -= 50;
 
@@ -207,7 +228,7 @@ long S_UpdateInput()
 		distanceFogValue = farz - 0x2000;
 	}
 
-	if (key_pressed(DIK_DIVIDE))
+	if (sdl_key_pressed(SDL_SCANCODE_KP_DIVIDE))
 	{
 		farz += 50;
 
@@ -223,10 +244,10 @@ long S_UpdateInput()
 	if (linput & IN_FORWARD && linput & IN_BACK)
 		linput |= IN_ROLL;
 
-	if (key_pressed(DIK_RETURN) || linput & IN_ACTION)
+	if (sdl_key_pressed(SDL_SCANCODE_RETURN) || linput & IN_ACTION)
 		linput |= IN_SELECT;
 
-	if (key_pressed(DIK_ESCAPE))
+	if (sdl_key_pressed(SDL_SCANCODE_ESCAPE))
 		linput |= IN_DESELECT;
 
 	if ((linput & (IN_RIGHT | IN_LEFT)) == (IN_RIGHT | IN_LEFT))
@@ -234,15 +255,14 @@ long S_UpdateInput()
 
 	if (GnGameMode == GAMEMODE_IN_GAME && !nLoadedPictures)
 	{
-		if (key_pressed(DIK_ADD))
+		if (sdl_key_pressed(SDL_SCANCODE_KP_PLUS))
 			IncreaseScreenSize();
 
-		if (key_pressed(DIK_SUBTRACT))
+		if (sdl_key_pressed(SDL_SCANCODE_KP_MINUS))
 			DecreaseScreenSize();
 	}
 	
-#if (DIRECT3D_VERSION >= 0x900)
-	if (key_pressed(DIK_F7))
+	if (sdl_key_pressed(SDL_SCANCODE_F7))
 	{
 		if (!F7_debounce)
 		{
@@ -254,26 +274,25 @@ long S_UpdateInput()
 	}
 	else
 		F7_debounce = 0;
-#endif
 
-	if (key_pressed(DIK_1) && Inv_RequestItem(GUN_OPTION))
+	if (sdl_key_pressed(SDL_SCANCODE_1) && Inv_RequestItem(GUN_OPTION))
 		lara.request_gun_type = LG_PISTOLS;
-	else if (key_pressed(DIK_2) && Inv_RequestItem(SHOTGUN_OPTION))
+	else if (sdl_key_pressed(SDL_SCANCODE_2) && Inv_RequestItem(SHOTGUN_OPTION))
 		lara.request_gun_type = LG_SHOTGUN;
-	else if (key_pressed(DIK_3) && Inv_RequestItem(MAGNUM_OPTION))
+	else if (sdl_key_pressed(SDL_SCANCODE_3) && Inv_RequestItem(MAGNUM_OPTION))
 		lara.request_gun_type = LG_MAGNUMS;
-	else if (key_pressed(DIK_4) && Inv_RequestItem(UZI_OPTION))
+	else if (sdl_key_pressed(SDL_SCANCODE_4) && Inv_RequestItem(UZI_OPTION))
 		lara.request_gun_type = LG_UZIS;
-	else if (key_pressed(DIK_5) && Inv_RequestItem(HARPOON_OPTION))
+	else if (sdl_key_pressed(SDL_SCANCODE_5) && Inv_RequestItem(HARPOON_OPTION))
 		lara.request_gun_type = LG_HARPOON;
-	else if (key_pressed(DIK_6) && Inv_RequestItem(M16_OPTION))
+	else if (sdl_key_pressed(SDL_SCANCODE_6) && Inv_RequestItem(M16_OPTION))
 		lara.request_gun_type = LG_M16;
-	else if (key_pressed(DIK_7) && Inv_RequestItem(ROCKET_OPTION))
+	else if (sdl_key_pressed(SDL_SCANCODE_7) && Inv_RequestItem(ROCKET_OPTION))
 		lara.request_gun_type = LG_ROCKET;
-	else if (key_pressed(DIK_8) && Inv_RequestItem(GRENADE_OPTION))
+	else if (sdl_key_pressed(SDL_SCANCODE_8) && Inv_RequestItem(GRENADE_OPTION))
 		lara.request_gun_type = LG_GRENADE;
 
-	if (key_pressed(DIK_0) && Inv_RequestItem(MEDI_OPTION))
+	if (sdl_key_pressed(SDL_SCANCODE_0) && Inv_RequestItem(MEDI_OPTION))
 	{
 		if (!med_debounce)
 		{
@@ -281,7 +300,7 @@ long S_UpdateInput()
 			med_debounce = 15;
 		}
 	}
-	else if (key_pressed(DIK_9) && Inv_RequestItem(BIGMEDI_OPTION))
+	else if (sdl_key_pressed(SDL_SCANCODE_9) && Inv_RequestItem(BIGMEDI_OPTION))
 	{
 		if (!med_debounce)
 		{
@@ -292,10 +311,9 @@ long S_UpdateInput()
 	else if (med_debounce)
 		med_debounce--;
 
-#if (DIRECT3D_VERSION < 0x900)
-	if (key_pressed(DIK_APOSTROPHE))
-		DXSaveScreen(App.BackBuffer);
-#endif
+	// Rimuovi codice DirectX specifico per salvare schermate
+	// if (key_pressed(DIK_APOSTROPHE))
+	//     DXSaveScreen(App.BackBuffer);
 
 	if (FinishLevelCheat)
 	{
@@ -305,15 +323,18 @@ long S_UpdateInput()
 
 	if (!gameflow.loadsave_disabled && !pictureFading)
 	{
-		if (key_pressed(DIK_F5))
+		if (sdl_key_pressed(SDL_SCANCODE_F5))
 		{
 			if (!tomb3.psx_saving)
 				linput |= IN_SAVE;
 		}
-		else if (key_pressed(DIK_F6))
+		else if (sdl_key_pressed(SDL_SCANCODE_F6))
 			linput |= IN_LOAD;
 	}
 
 	input = linput;
-	return GtWindowClosed;
+	
+	// Controlla se la finestra è chiusa
+	SDL_PumpEvents();
+	return 0; // Sempre ritorna 0, la chiusura della finestra è gestita dagli eventi SDL
 }

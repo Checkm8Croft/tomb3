@@ -15,6 +15,8 @@
 #include "display.h"
 #include "fmv.h"
 #include "../newstuff/discord.h"
+#include "file.h"
+#include "hwrender.h"
 
 char* malloc_ptr;
 char* malloc_buffer;
@@ -22,12 +24,13 @@ static long malloc_free;
 static long malloc_size;
 static long malloc_used;
 
-D3DTLVERTEX* CurrentTLVertex;
-D3DTLVERTEX* VertexBuffer;
-D3DTLVERTEX* UnRollBuffer;
+// Sostituisci D3DTLVERTEX con GLVERTEX per OpenGL
+GLVERTEX* CurrentTLVertex;
+GLVERTEX* VertexBuffer;
+GLVERTEX* UnRollBuffer;
 
-static D3DTLVERTEX* TLVertexBuffer;
-static D3DTLVERTEX* TLUnRollBuffer;
+static GLVERTEX* TLVertexBuffer;
+static GLVERTEX* TLUnRollBuffer;
 
 WATERTAB WaterTable[22][64];
 float wibble_table[32];
@@ -39,22 +42,29 @@ void ShutdownGame()
 	GlobalFree(TLVertexBuffer);
 	GlobalFree(TLUnRollBuffer);
 	ACMClose();
-#if (DIRECT3D_VERSION < 0x900)
-	DXFreeTPages();
-	DXSetCooperativeLevel(App.DDraw, App.WindowHandle, DDSCL_NORMAL);
-#endif
+	
+	// Rimuovi codice DirectX specifico
+	#if (DIRECT3D_VERSION < 0x900)
+	// DXFreeTPages();  // Non necessario per OpenGL
+	// DXSetCooperativeLevel(App.DDraw, App.WindowHandle, DDSCL_NORMAL);  // DirectX only
+	#endif
 
 	if (malloc_buffer)
 		GlobalFree(malloc_buffer);
 
-	DXClearAllTextures(Textures);
-#if (DIRECT3D_VERSION < 0x900)
-	DXReleasePalette();
-#endif
+	// Sostituisci con funzione OpenGL per liberare texture
+	HWR_FreeTexturePages();
+	
+	#if (DIRECT3D_VERSION < 0x900)
+	// DXReleasePalette();  // DirectX only
+	#endif
+	
 	DI_Finish();
 	DS_Finish();
 	WinFreeDX(1);
-	DXFreeDeviceInfo(&App.DeviceInfo);
+	
+	// Per OpenGL, non abbiamo bisogno di liberare device info come in DirectX
+	// GLFreeDeviceInfo(&App.DeviceInfo);  // Rimuovi questa linea
 
 #ifdef DO_LOG
 	if (logF)
@@ -179,25 +189,21 @@ void game_free(long size)
 
 long S_InitialiseSystem()
 {
-	DISPLAYMODE* dm;
-
-#if (DIRECT3D_VERSION >= 0x900)
-	dm = &App.lpDeviceInfo->D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#else
-	dm = &App.lpDeviceInfo->DDInfo[App.lpDXConfig->nDD].D3DInfo[App.lpDXConfig->nD3D].DisplayMode[App.lpDXConfig->nVMode];
-#endif
+	// Per OpenGL, usa le dimensioni della finestra direttamente
 	DumpX = 0;
 	DumpY = 0;
-	DumpWidth = (short)dm->w;
-	DumpHeight = (short)dm->h;
+	DumpWidth = App.width;  // Usa le dimensioni della finestra
+	DumpHeight = App.height;
+	
 	InitZTable();
 	InitUVTable();
 
-	TLVertexBuffer = (D3DTLVERTEX*)GlobalAlloc(GMEM_FIXED, MAX_TLVERTICES * sizeof(D3DTLVERTEX));
-	VertexBuffer = (D3DTLVERTEX*)(((long)TLVertexBuffer + 32) & 0xFFFFFFE0);
+	// Alloca buffer per i vertici OpenGL
+	TLVertexBuffer = (GLVERTEX*)GlobalAlloc(GMEM_FIXED, MAX_TLVERTICES * sizeof(GLVERTEX));
+	VertexBuffer = (GLVERTEX*)(((long)TLVertexBuffer + 32) & 0xFFFFFFE0);
 
-	TLUnRollBuffer = (D3DTLVERTEX*)GlobalAlloc(GMEM_FIXED, MAX_TLVERTICES * sizeof(D3DTLVERTEX));
-	UnRollBuffer = (D3DTLVERTEX*)(((long)TLUnRollBuffer + 32) & 0xFFFFFFE0);
+	TLUnRollBuffer = (GLVERTEX*)GlobalAlloc(GMEM_FIXED, MAX_TLVERTICES * sizeof(GLVERTEX));
+	UnRollBuffer = (GLVERTEX*)(((long)TLUnRollBuffer + 32) & 0xFFFFFFE0);
 
 	malloc_size = MALLOC_SIZE;
 	return 1;

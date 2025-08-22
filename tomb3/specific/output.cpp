@@ -3,19 +3,16 @@
 #include "../3dsystem/3d_gen.h"
 #include "transform.h"
 #include "hwrender.h"
-#include "../3dsystem/hwinsert.h"
-#if (DIRECT3D_VERSION >= 0x900)
+#include "../3dsystem/hwinsert.h"  // Commentato se non compatibile con OpenGL
 #include "../newstuff/Picture2.h"
-#else
 #include "picture.h"
-#endif
-#include "dxshell.h"
+#include "dxshell.h"  // Commentato
+#include "dd.h"  // Commentato
 #include "display.h"
 #include "time.h"
 #include "game.h"
 #include "../3dsystem/phd_math.h"
-#include "dd.h"
-#include "file.h"
+#include "file.h"  // Mantieni se necessario
 #include "winmain.h"
 #include "../game/gameflow.h"
 #include "../game/draw.h"
@@ -26,6 +23,16 @@
 #include "litesrc.h"
 #include "draweffects.h"
 #include "../tomb3/tomb3.h"
+#include "../global/types.h"
+// Aggiungi intestazioni OpenGL e SDL
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+#else
+#include <GL/gl.h>
+#include <GL/glu.h>
+#endif
+#include <SDL2/SDL.h>
 
 static short shadow[6 + (3 * 8)] =
 {
@@ -310,6 +317,59 @@ static void DrawPickup(short obj_num)
 	phd_PopMatrix();
 }
 
+// Funzione di sostituzione per DXClearBuffers
+void DXClearBuffers(int flags, int value) {
+    GLbitfield mask = 0;
+    if (flags & 2) mask |= GL_COLOR_BUFFER_BIT;
+    if (flags & 4) mask |= GL_DEPTH_BUFFER_BIT;
+    if (flags & 8) mask |= GL_STENCIL_BUFFER_BIT;
+    glClear(mask);
+}
+
+// Funzione di sostituzione per HWR_EnableZBuffer
+void HWR_EnableZBuffer(bool enable, bool write) {
+    if (enable) {
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(write ? GL_TRUE : GL_FALSE);
+    } else {
+        glDisable(GL_DEPTH_TEST);
+    }
+}
+
+// Funzione di sostituzione per HWR_EnableAlphaBlend
+void HWR_EnableAlphaBlend(bool enable) {
+    if (enable) {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    } else {
+        glDisable(GL_BLEND);
+    }
+}
+
+// Funzioni stub per compatibilità
+void HWR_EnableColorAddition(bool enable) {
+    // Implementazione con glBlendFunc o shader
+    if (enable) {
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    } else {
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
+}
+
+void HWR_EnableColorKey(bool enable) {
+    // Implementazione con texture alpha o shader
+    // Questa funzione potrebbe non essere necessaria in OpenGL
+}
+
+void HWR_SetCurrentTexture(TEXHANDLE texture) {
+    glBindTexture(GL_TEXTURE_2D, texture);
+}
+
+void HWR_EndScene() {
+    glFlush();
+    SDL_GL_SwapWindow(App.window);
+}
+
 static void OutputPickupDisplay()
 {
 	DXClearBuffers(8, 0);
@@ -318,7 +378,7 @@ static void OutputPickupDisplay()
 	{
 		for (int i = 0; i < MAX_BUCKETS; i++)
 		{
-			Buckets[i].TPage = (DXTEXTURE*)-1;
+			Buckets[i].TPage = (GLTEXTUREINFO*)-1;
 			Buckets[i].nVtx = 0;
 		}
 

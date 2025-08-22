@@ -1,6 +1,6 @@
 #pragma once
 #include "../global/types.h"
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 // Definizioni per compatibilità
 typedef SDL_Window* HWND;
