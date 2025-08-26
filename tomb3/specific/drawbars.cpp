@@ -8,6 +8,7 @@
 #include "display.h"
 #include "../game/control.h"
 #include "../tomb3/tomb3.h"
+void HWR_EnableColorAddition(bool enable);
 
 // Variabile globale per tracciare lo stato dello Z-buffer
 static bool gZBufferEnabled = true;

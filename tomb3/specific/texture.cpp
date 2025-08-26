@@ -4,17 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include "single.h"
 
 
-void GLSaveScreen() {
-    // Implement screen capture functionality
-    // This is a placeholder - implement based on your needs
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
-    
-    // You'd typically use glReadPixels here
-    // to capture the screen to a buffer or file
-}
 
 // Usa array C-style invece di vector
 #define MAX_TEXTURE_SIZE (4096 * 4096 * 4)

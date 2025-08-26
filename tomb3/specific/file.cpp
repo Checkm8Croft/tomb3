@@ -77,6 +77,9 @@ char* GetFullPathString(const char* filename) {
     }
     return path;
 }
+void FreeWinPlay() {
+    // Implementazione se necessaria
+}
 
 HANDLE CreateFile(const char* filename, int access, int share, void* security, int creation, int attributes, void* template_file)
 {

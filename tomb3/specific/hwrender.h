@@ -4,7 +4,6 @@
 // Funzioni di rendering hardware OpenGL
 void HWR_EnableZBuffer(bool write, bool compare);
 void HWR_EnableAlphaBlend(bool enable);
-void HWR_EnableColorAddition(bool enable);
 void HWR_EnableColorSubtraction(bool enable);
 void HWR_ResetZBuffer();
 void HWR_ResetCurrentTexture();

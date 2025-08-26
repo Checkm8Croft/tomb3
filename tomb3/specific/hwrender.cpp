@@ -8,7 +8,7 @@
 #include "drawbars.h"
 #include "../tomb3/tomb3.h"
 #include <cmath>
-
+#include "single.h"
 // Includi i file header necessari per le definizioni
 #include "../game/control.h"
 #include "specific.h"
@@ -18,7 +18,6 @@
 #define MAX_UNROLL_VERTICES 8192
 
 // Variabili globali - dichiarazioni compatibili
-extern DXCONFIG* G_dxConfig;
 extern long nDrawnPoints;
 extern bool bBlueEffect;
 extern GLTEXTUREINFO* TexturePtrs[MAX_TPAGES];  // Usa MAX_TPAGES invece di MAX_TEXTURES
@@ -44,81 +43,14 @@ float GammaOption = 3.0F;
 uchar ColorTable[256];
 
 static GLenum dpPrimitiveType;
-static bool zBufWriteEnabled;
-static bool zBufCompareEnabled;
-static bool AlphaBlendEnabled;
-bool bAlphaTesting;
 
-void HWR_EnableZBuffer(bool write, bool compare)
-{
-    if (!G_dxConfig || !G_dxConfig->bZBuffer)
-        return;
 
-    if (write != zBufWriteEnabled)
-    {
-        glDepthMask(write ? GL_TRUE : GL_FALSE);
-        zBufWriteEnabled = write;
-    }
 
-    if (compare != zBufCompareEnabled)
-    {
-        if (compare)
-        {
-            glEnable(GL_DEPTH_TEST);
-            glDepthFunc(GL_LEQUAL);
-        }
-        else
-        {
-            glDisable(GL_DEPTH_TEST);
-        }
-        zBufCompareEnabled = compare;
-    }
-}
 
-void HWR_EnableColorKey(bool enable)
-{
-    if (enable)
-    {
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        AlphaBlendEnabled = true;
-    }
-    else
-    {
-        glDisable(GL_BLEND);
-        AlphaBlendEnabled = false;
-    }
-}
 
-void HWR_EnableAlphaBlend(bool enable)
-{
-    if (enable)
-    {
-        if (!AlphaBlendEnabled)
-        {
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            AlphaBlendEnabled = true;
-        }
-    }
-    else if (AlphaBlendEnabled)
-    {
-        glDisable(GL_BLEND);
-        AlphaBlendEnabled = false;
-    }
-}
 
-void HWR_EnableColorAddition(bool enable)
-{
-    if (enable)
-    {
-        glBlendFunc(GL_ONE, GL_ONE);
-    }
-    else
-    {
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    }
-}
+
+
 
 void HWR_EnableColorSubtraction(bool enable)
 {
@@ -167,7 +99,7 @@ void HWR_BeginScene()
         
     nDrawnPoints = 0;
 
-    if (G_dxConfig && G_dxConfig->bZBuffer)
+    if (G_dxConfig.bZBuffer)
     {
         for (int i = 0; i < MAX_BUCKETS; i++)
         {
@@ -177,11 +109,6 @@ void HWR_BeginScene()
     }
 }
 
-void HWR_EndScene()
-{
-    if (EndScene)
-        EndScene();
-}
 
 void HWR_DrawRoutines(long nVtx, void* vtx, long nDrawType, long TPage)
 {
@@ -488,13 +415,5 @@ void InitOpenGLFunctions()
         }
     };
 
-    BeginScene = []() {
-        // Inizio scena OpenGL
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    };
-
-    EndScene = []() {
-        // Fine scena OpenGL
-        glFlush();
-    };
+    
 }

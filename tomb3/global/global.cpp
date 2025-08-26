@@ -7,3 +7,6 @@ bool AppWindowed;
 DXCONFIG G_dxConfig;
 bool bMonoScreen;
 GLVERTEX* CurrentGLVertex;
+bool zBufWriteEnabled = false;
+bool zBufCompareEnabled = false;
+bool AlphaBlendEnabled = false;

@@ -10,6 +10,7 @@ find_package(OpenGL REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
 find_package(SDL2_mixer REQUIRED)
+
 # Include directories
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/tomb3
@@ -36,7 +37,6 @@ set(SOURCES
     tomb3/3dsystem/hwinsert.cpp
     tomb3/3dsystem/phd_math.cpp
     tomb3/3dsystem/scalespr.cpp
-    tomb3/global/global.cpp
     tomb3/game/51baton.cpp
     tomb3/game/51civvy.cpp
     tomb3/game/51laser.cpp
@@ -161,6 +161,7 @@ set(SOURCES
     tomb3/specific/option.cpp
     tomb3/specific/output.cpp
     tomb3/specific/picture.cpp
+    tomb3/specific/single.cpp
     tomb3/specific/smain.cpp
     tomb3/specific/specific.cpp
     tomb3/specific/texture.cpp
@@ -173,12 +174,19 @@ set(SOURCES
 add_executable(tomb3 ${SOURCES})
 
 # Linking corretto
-target_link_libraries(tomb3 
+# Cerca le librerie manualmente
+find_library(SDL2_LIB SDL2 PATHS /usr/local/lib /opt/homebrew/lib)
+find_library(SDL2_IMAGE_LIB SDL2_image PATHS /usr/local/lib /opt/homebrew/lib)  
+find_library(SDL2_MIXER_LIB SDL2_mixer PATHS /usr/local/lib /opt/homebrew/lib)
+
+target_link_libraries(tomb3
+    ${SDL2_LIB}
+    ${SDL2_IMAGE_LIB}
+    ${SDL2_MIXER_LIB}
     ${OpenGL_LIBRARIES}
-    ${SDL2_LIBRARIES}
-    ${SDL2_IMAGE_LIBRARIES}
-    ${SDL2_MIXER_LIBRARIES}
 )
+# Rimuovi le righe con --start-group/--end-group e usa invece:
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,-undefined,dynamic_lookup")
 
 if(APPLE)
     target_link_libraries(tomb3

@@ -24,6 +24,7 @@
 #include "draweffects.h"
 #include "../tomb3/tomb3.h"
 #include "../global/types.h"
+#include "single.h"
 // Aggiungi intestazioni OpenGL e SDL
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
@@ -35,7 +36,6 @@
 #include <SDL2/SDL.h>
 
 #define MAX_TEXTURES 1024  // Or whatever number you need
-extern void GLSaveScreen();
 extern GLuint phdtextinfo[]; // Or whatever type this should be
 // Windows MulDiv equivalent
 inline int MulDiv(int number, int numerator, int denominator) {
@@ -43,15 +43,7 @@ inline int MulDiv(int number, int numerator, int denominator) {
 }
 // If phdtextinfo is a texture array, declare it properly
 extern GLuint phdtextinfo[MAX_TEXTURES];
-void GLSaveScreen() {
-    // Implement screen capture functionality
-    // This is a placeholder - implement based on your needs
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
-    
-    // You'd typically use glReadPixels here
-    // to capture the screen to a buffer or file
-}
+
 
 void HWR_SetCurrentTextureByHandle(TEXHANDLE texture);
 void HWR_SetCurrentTextureByInfo(GLTEXTUREINFO* tex);
@@ -347,49 +339,17 @@ void DXClearBuffers(int flags, int value) {
     glClear(mask);
 }
 
-// Funzione di sostituzione per HWR_EnableZBuffer
-void HWR_EnableZBuffer(bool enable, bool write) {
-    if (enable) {
-        glEnable(GL_DEPTH_TEST);
-        glDepthMask(write ? GL_TRUE : GL_FALSE);
-    } else {
-        glDisable(GL_DEPTH_TEST);
-    }
-}
 
-// Funzione di sostituzione per HWR_EnableAlphaBlend
-void HWR_EnableAlphaBlend(bool enable) {
-    if (enable) {
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    } else {
-        glDisable(GL_BLEND);
-    }
-}
 
-// Funzioni stub per compatibilità
-void HWR_EnableColorAddition(bool enable) {
-    // Implementazione con glBlendFunc o shader
-    if (enable) {
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-    } else {
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    }
-}
 
-void HWR_EnableColorKey(bool enable) {
-    // Implementazione con texture alpha o shader
-    // Questa funzione potrebbe non essere necessaria in OpenGL
-}
+
+
 
 void HWR_SetCurrentTexture(TEXHANDLE texture) {
     glBindTexture(GL_TEXTURE_2D, texture);
 }
 
-void HWR_EndScene() {
-    glFlush();
-    SDL_GL_SwapWindow(App.sdl_window);
-}
+
 
 static void OutputPickupDisplay()
 {

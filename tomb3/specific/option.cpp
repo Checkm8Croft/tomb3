@@ -41,6 +41,14 @@ static TEXTSTRING* ctrltext[2];
 static long iconfig;
 static long keychange;
 
+void do_sound_option(INVENTORY_ITEM* item) {
+    // Implementazione
+}
+
+void do_pickup_option(INVENTORY_ITEM* item) {
+    // Implementazione
+}
+
 long SavedGames;
 
 long GetRenderWidth()

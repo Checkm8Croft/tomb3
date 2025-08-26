@@ -106,7 +106,7 @@ void Log(const char* s, ...)
 }
 
 // Main loop di esempio
-int main(int argc, char** argv)
+int start(int argc, char** argv)
 {
     App.width = 800;
     App.height = 600;
