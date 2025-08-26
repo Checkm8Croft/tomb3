@@ -9,26 +9,8 @@ Pull Requests are always welcome!
 Use the cmake file
 
 ## Progress
-I currently modified:
-- Types.h (one of the main headers, so I could say that I have 1/3 of the work ready)
-- Pch.h
-- Registry.h
-- Tomb3.cpp
-- Init.h
-- Winmain.cpp and h
-- 3d_gen.cpp
-- Hwinsert.h and cpp
-- File.h
-- Hwrender.h
-- Game.h
-- Init.h
-- Texture.h
-- Health.cpp
-- Invfunc.cpp
-- Audio.cpp and h
-- dd.cpp and h
-- di.cpp and h
-- display.cpp
+I'm currently at the 94% of the work
+ALso the file .cpp on the game folder, the most part of them, are compiling normally without edits, so good.
 
 ### Credits:
 Checkm8Croft: For porting the project

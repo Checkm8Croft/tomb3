@@ -10,7 +10,7 @@ void HWR_ResetZBuffer();
 void HWR_ResetCurrentTexture();
 void HWR_BeginScene();
 void HWR_EndScene();
-
+void HWR_SetCurrentTexture(GLTEXTUREINFO* tex);
 void HWR_DrawRoutines(long nVtx, GLVERTEX* vtx, long nDrawType, long TPage);
 
 void HWR_InitGamma(float gamma);

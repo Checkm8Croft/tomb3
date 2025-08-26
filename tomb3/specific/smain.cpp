@@ -23,11 +23,9 @@
 #include "init.h"
 #include "../newstuff/discord.h"
 #include "../game/control.h"
-#if (DIRECT3D_VERSION >= 0x900)
 #include "../newstuff/Picture2.h"
-#endif
 #include "../tomb3/tomb3.h"
-
+bool LoadPicture(const char* name, GLuint* textureID, int* width, int* height);
 long HiResFlag;
 long title_loaded;
 char exit_message[128];
@@ -260,24 +258,18 @@ long TitleSequence()
 #if (DIRECT3D_VERSION >= 0x900)
 	RemoveMonoScreen(0);
 #endif
+GLuint textureID;
+int width, height;
 
 	if (tomb3.gold)
 	{
 		strcpy(name, GF_titlefilenames[1]);
 		T3_GoldifyString(name);
-#if (DIRECT3D_VERSION >= 0x900)
-		LoadPicture(name);
-#else
-		LoadPicture(name, App.PictureBuffer);
-#endif
+		LoadPicture(name, &textureID, &width, &height);
 	}
 	else
-#if (DIRECT3D_VERSION >= 0x900)
-		LoadPicture(GF_titlefilenames[1]);
-#else
-		LoadPicture(GF_titlefilenames[1], App.PictureBuffer);
-#endif
 
+		LoadPicture(GF_titlefilenames[1], &textureID, &width, &height);
 	FadePictureUp(32);
 
 	if (!title_loaded)
@@ -362,29 +354,23 @@ long GameMain()
 	InitialiseStartInfo();
 	S_FrontEndCheck(&savegame, sizeof(SAVEGAME_INFO));
 	HiResFlag = -1;
-	malloc_buffer = (char*)GlobalAlloc(GMEM_FIXED, MALLOC_SIZE);
+	malloc_buffer = (char*)malloc(MALLOC_SIZE);
 
 	if (!malloc_buffer)
 	{
-		lstrcpy(exit_message, "GameMain: could not allocate malloc_buffer");
+		strcpy(exit_message, "GameMain: could not allocate malloc_buffer");
 		return 0;
 	}
 
 	HiResFlag = 0;
 	TempVideoAdjust(1, 1.0);
 	S_UpdateInput();
-
-#if (DIRECT3D_VERSION >= 0x900)
+GLuint textureID;
+int width, height;
 	if (tomb3.gold)
-		LoadPicture("pixg\\legal.bmp");
+		LoadPicture("pixg\\legal.bmp", &textureID, &width, &height);
 	else
-		LoadPicture("pix\\legal.bmp");
-#else
-	if (tomb3.gold)
-		LoadPicture("pixg\\legal.bmp", App.PictureBuffer);
-	else
-		LoadPicture("pix\\legal.bmp", App.PictureBuffer);
-#endif
+		LoadPicture("pix\\legal.bmp", &textureID, &width, &height);
 
 	FadePictureUp(32);
 	S_Wait(150 * TICKS_PER_FRAME, 1);
@@ -397,7 +383,7 @@ long GameMain()
 
 	if (s == 1)
 	{
-		lstrcpy(exit_message, "GameMain: failed in GF_DoFrontEndSequence()");
+		strcpy(exit_message, "GameMain: failed in GF_DoFrontEndSequence()");
 		return 0;
 	}
 
@@ -418,7 +404,7 @@ long GameMain()
 			{
 				if (level > gameflow.num_levels)
 				{
-					wsprintf(exit_message, "GameMain: STARTGAME with invalid level number (%d)", level);
+					sprintf(exit_message, "GameMain: STARTGAME with invalid level number (%d)", level);
 					return 0;
 				}
 
@@ -434,7 +420,7 @@ long GameMain()
 
 			if (savegame.current_level > gameflow.num_levels)
 			{
-				wsprintf(exit_message, "GameMain: STARTSAVEDGAME with invalid level number (%d)", savegame.current_level);
+				sprintf(exit_message, "GameMain: STARTSAVEDGAME with invalid level number (%d)", savegame.current_level);
 				return 0;
 			}
 
@@ -459,7 +445,7 @@ long GameMain()
 
 				if (gameflow.title_replace < 0 || gameflow.title_replace == EXIT_TO_TITLE)
 				{
-					lstrcpy(exit_message, "GameMain Failed: Title disabled & no replacement");
+					strcpy(exit_message, "GameMain Failed: Title disabled & no replacement");
 					return 0;
 				}
 			}

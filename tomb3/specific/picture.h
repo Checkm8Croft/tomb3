@@ -10,17 +10,17 @@ void FadePictureDown(long steps);
 void CrossFadePicture();
 void S_FadePicture();
 void S_FadeToBlack();
-bool LoadPicture(const char* name, LPDIRECTDRAWSURFACEX surf);
+bool LoadPicture(const char* name, GLSurface surf);
 void FreePictureTextures(long* indices);
 void CreateMonoScreen();
 void DrawMonoScreen(long r, long g, long b);
 void RemoveMonoScreen(long fade);
-void ConvertSurfaceToTextures(LPDIRECTDRAWSURFACEX surf);
+void ConvertSurfaceToTextures(GLSurface surf);
 void DrawTile(long x, long y, long w, long h, long tpage, long tU, long tV, long tW, long tH, long c0, long c1, long c2, long c3, float z);
 void DrawPictureAlpha(long col, long* indices, float z);
 void TRDrawPicture(long col, long* indices, float z);
 #endif
-
+bool LoadPicture(const char* name, GLuint* textureID);
 extern long OldPicTexIndices[5];
 extern long CurPicTexIndices[5];
 extern long nLoadedPictures;

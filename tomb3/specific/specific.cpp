@@ -6,9 +6,13 @@
 #include "audio.h"
 #include "winmain.h"
 #include "../game/sound.h"
-
+#include <SDL2/SDL_mixer.h>
+#include <SDL2/SDL.h>
 static long MasterVolume;
+void UT_CenterWindow(SDL_Window* window);
 
+// Sostituisci la callback con una funzione SDL2
+bool UT_OKCancelBox(const char* title, const char* message, SDL_Window* parentWindow);
 long CalcVolume(long volume)
 {
 	if (!volume || !MasterVolume)
@@ -77,16 +81,19 @@ void S_SoundStopAllSamples()
 	{
 		for (int i = 0; i < 32; i++)
 		{
-			if (DS_Samples[i])
+			if (DS_Samples[i].chunk)
 			{
-				DS_Samples[i]->Stop();
-				DS_Samples[i]->Release();
-				DS_Samples[i] = 0;
+				if (DS_Samples[i].channel != -1) {
+					Mix_HaltChannel(DS_Samples[i].channel);
+				}
+				Mix_FreeChunk(DS_Samples[i].chunk);
+				DS_Samples[i].chunk = nullptr;
+				DS_Samples[i].channel = -1;
+				DS_Samples[i].active = false;
 			}
 		}
 	}
 }
-
 long S_SoundSampleIsPlaying(long num)
 {
 	if (sound_active)
@@ -122,7 +129,7 @@ void S_CDVolume(long volume)
 
 long S_StartSyncedAudio(long track)
 {
-	if (App.DXConfig.sound)
+	if (App.gl_config.sound)
 	{
 		ACMEmulateCDPlay(track, 0);
 		return 1;

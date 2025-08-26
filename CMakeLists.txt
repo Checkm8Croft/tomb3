@@ -3,12 +3,13 @@ project(tomb3)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
+add_compile_definitions(GL_SILENCE_DEPRECATION)
 find_package(OpenGL REQUIRED)
 include_directories(${OpenGL_INCLUDE_DIR})
 include_directories(/usr/local/include) # Forza include se serve
 
 find_package(SDL2 REQUIRED)
+find_package(SDL2_image REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS})
 # Per OpenAL
 find_package(OpenAL REQUIRED)

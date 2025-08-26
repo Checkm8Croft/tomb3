@@ -6,11 +6,16 @@
 
 #ifndef PCH_H
 #define PCH_H
-
+#define GL_SILENCE_DEPRECATION
 //#define RANDO_STUFF	1
 #define TROYESTUFF	1
 //#define DO_LOG	1
-
+#include <cstdlib>
+#include <ctime>
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 #if defined(__APPLE__)
     #include <OpenGL/gl.h>
     #include <OpenGL/glu.h>

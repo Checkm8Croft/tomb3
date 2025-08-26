@@ -7,6 +7,7 @@
     #include <GL/gl.h>
     #include <GL/glu.h>
 #endif
+#include <SDL2/SDL.h>
 typedef unsigned char uchar;
 typedef unsigned short ushort;
 typedef unsigned long ulong;
@@ -2147,8 +2148,19 @@ struct APPWINDOW
     volatile bool hasFocus;
     long nUVAdd;
     float fps;
-
+	SDL_Window* sdl_window;
+    SDL_GLContext gl_context;
+    GLCONFIG gl_config;
+    GLuint framebuffer;
+    GLuint depthbuffer;
 	
+};
+struct GLTEXTURE
+{
+    GLuint texHandle;
+    long nWidth;
+    long nHeight;
+    ulong dwFlags;
 };
 typedef struct GLSurface {
     GLuint texture_id;
@@ -2158,6 +2170,21 @@ typedef struct GLSurface {
 } GLSurface, *LPDIRECTDRAWSURFACEX;
 typedef GLuint TEXHANDLE;  // Texture handle è un GLuint
 
+long GLTextureMakeDeviceSurface(long w, long h, GLTEXTURE* list);
+void GLTextureCleanup(long index, GLTEXTURE* list);
+long GLTextureAdd(long w, long h, uchar* src, GLTEXTURE* list, long bpp, ulong flags);
+void GLCreateMaxTPages(long create);
+void GLFreeTPages();
+
+// Funzioni di compatibilità
+long DXTextureMakeDeviceSurface(long w, long h, GLTEXTURE* list);
+void DXTextureCleanup(long index, GLTEXTURE* list);
+long DXTextureAdd(long w, long h, uchar* src, GLTEXTURE* list, long bpp, ulong flags);
+void DXCreateMaxTPages(long create);
+void DXFreeTPages();
+long DXTextureNewPalette(uchar* palette);
+void DXResetPalette();
+void DXReleasePalette();
 // Definisci una struttura per surface description (se necessario)
 typedef struct {
     int width;

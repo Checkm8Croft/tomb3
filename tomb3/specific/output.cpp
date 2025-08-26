@@ -34,6 +34,27 @@
 #endif
 #include <SDL2/SDL.h>
 
+#define MAX_TEXTURES 1024  // Or whatever number you need
+extern void GLSaveScreen();
+extern GLuint phdtextinfo[]; // Or whatever type this should be
+// Windows MulDiv equivalent
+inline int MulDiv(int number, int numerator, int denominator) {
+    return (number * numerator) / denominator;
+}
+// If phdtextinfo is a texture array, declare it properly
+extern GLuint phdtextinfo[MAX_TEXTURES];
+void GLSaveScreen() {
+    // Implement screen capture functionality
+    // This is a placeholder - implement based on your needs
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    
+    // You'd typically use glReadPixels here
+    // to capture the screen to a buffer or file
+}
+
+void HWR_SetCurrentTextureByHandle(TEXHANDLE texture);
+void HWR_SetCurrentTextureByInfo(GLTEXTUREINFO* tex);
 static short shadow[6 + (3 * 8)] =
 {
 	0, 0, 0,		//x, y, z
@@ -367,14 +388,14 @@ void HWR_SetCurrentTexture(TEXHANDLE texture) {
 
 void HWR_EndScene() {
     glFlush();
-    SDL_GL_SwapWindow(App.window);
+    SDL_GL_SwapWindow(App.sdl_window);
 }
 
 static void OutputPickupDisplay()
 {
 	DXClearBuffers(8, 0);
 
-	if (App.lpDXConfig->bZBuffer)
+	if (App.gl_config.bZBuffer)
 	{
 		for (int i = 0; i < MAX_BUCKETS; i++)
 		{
@@ -398,27 +419,17 @@ static void OutputPickupDisplay()
 	bBlueEffect = 0;
 	DrawPickup(pickups[CurrentPickup].sprnum);
 
-	if (App.lpDXConfig->bZBuffer)
+	if (App.gl_config.bZBuffer)
 	{
 		if (bAlphaTesting)
 		{
-#if (DIRECT3D_VERSION >= 0x900)
-			SetRenderState(D3DRS_ALPHATESTENABLE, 0);
+			glEnable(GL_ALPHA_TEST);
 			DrawBuckets();
-			SetRenderState(D3DRS_ALPHATESTENABLE, 1);
-#else
-			SetRenderState(D3DRENDERSTATE_ALPHATESTENABLE, 0);
-			DrawBuckets();
-			SetRenderState(D3DRENDERSTATE_ALPHATESTENABLE, 1);
-#endif
+			glDisable(GL_ALPHA_TEST);
 			phd_SortPolyList(surfacenumbf, sort3d_bufferbf);
 			HWR_DrawPolyListBF(surfacenumbf, sort3d_bufferbf);
 			HWR_EnableZBuffer(0, 1);
-#if (DIRECT3D_VERSION >= 0x900)
-			SetRenderState(D3DRS_ALPHATESTENABLE, 0);
-#else
-			SetRenderState(D3DRENDERSTATE_ALPHATESTENABLE, 0);
-#endif
+			glDisable(GL_ALPHA_TEST);
 			phd_SortPolyList(surfacenumfb, sort3d_bufferfb);
 			HWR_DrawPolyListBF(surfacenumfb, sort3d_bufferfb);
 		}
@@ -442,7 +453,7 @@ static void OutputPickupDisplay()
 
 void S_OutputPolyList()
 {
-	if (App.lpDXConfig->bZBuffer)
+	if (App.gl_config.bZBuffer)
 	{
 #if (DIRECT3D_VERSION < 0x900)
 		HWR_EnableColorKey(0);
@@ -450,27 +461,17 @@ void S_OutputPolyList()
 		HWR_EnableAlphaBlend(0);
 		HWR_EnableColorAddition(0);
 		HWR_EnableZBuffer(1, 1);
-		HWR_SetCurrentTexture(0);
+		HWR_SetCurrentTextureByHandle(0);
 
 		if (bAlphaTesting)
 		{
-#if (DIRECT3D_VERSION >= 0x900)
-			SetRenderState(D3DRS_ALPHATESTENABLE, 0);
+			glDisable(GL_ALPHA_TEST);
 			DrawBuckets();
-			SetRenderState(D3DRS_ALPHATESTENABLE, 1);
-#else
-			SetRenderState(D3DRENDERSTATE_ALPHATESTENABLE, 0);
-			DrawBuckets();
-			SetRenderState(D3DRENDERSTATE_ALPHATESTENABLE, 1);
-#endif
+			glEnable(GL_ALPHA_TEST);
 			phd_SortPolyList(surfacenumbf, sort3d_bufferbf);
 			HWR_DrawPolyListBF(surfacenumbf, sort3d_bufferbf);
 			HWR_EnableZBuffer(0, 1);
-#if (DIRECT3D_VERSION >= 0x900)
-			SetRenderState(D3DRS_ALPHATESTENABLE, 0);
-#else
-			SetRenderState(D3DRENDERSTATE_ALPHATESTENABLE, 0);
-#endif
+			glDisable(GL_ALPHA_TEST);
 			phd_SortPolyList(surfacenumfb, sort3d_bufferfb);
 			HWR_DrawPolyListBF(surfacenumfb, sort3d_bufferfb);
 		}
@@ -637,9 +638,7 @@ long S_DumpCine()
 	if (!framedump)
 		return 0;
 
-#if (DIRECT3D_VERSION < 0x900)
-	DXSaveScreen(App.FrontBuffer);
-#endif
+	GLSaveScreen();
 	return 1;
 }
 
@@ -678,7 +677,33 @@ void S_ClearScreen()
 {
 	ScreenClear(0);
 }
+// Aggiungi all'inizio del file
+struct GLTextureMapping {
+    GLuint glHandle;
+    PHDTEXTURESTRUCT phdInfo;
+};
 
+static GLTextureMapping textureMap[MAX_TEXTURES];
+static int textureCount = 0;
+
+// Funzioni di utilità
+GLuint PHDToGLHandle(PHDTEXTURESTRUCT phdTex) {
+    for (int i = 0; i < textureCount; i++) {
+        if (memcmp(&textureMap[i].phdInfo, &phdTex, sizeof(PHDTEXTURESTRUCT)) == 0) {
+            return textureMap[i].glHandle;
+        }
+    }
+    return 0;
+}
+
+PHDTEXTURESTRUCT GLHandleToPHD(GLuint glHandle) {
+    for (int i = 0; i < textureCount; i++) {
+        if (textureMap[i].glHandle == glHandle) {
+            return textureMap[i].phdInfo;
+        }
+    }
+    return PHDTEXTURESTRUCT(); // Restituisce una struttura vuota
+}
 void AnimateTextures(long n)
 {
 	PHDTEXTURESTRUCT tex;
@@ -691,14 +716,14 @@ void AnimateTextures(long n)
 
 	for (comp += n; comp > nFrames; comp -= nFrames)
 	{
-		nRanges = *aranges;
-		range = aranges + 1;
+		nRanges = *range;
+		range = range + 1;
 
 		for (int i = 0; i < nRanges; i++)
 		{
 			nRangeFrames = *range++;
 
-			tex = phdtextinfo[range[0]];
+			tex = GLHandleToPHD(phdtextinfo[range[0]]);
 
 			while (nRangeFrames > 0)
 			{
@@ -707,7 +732,7 @@ void AnimateTextures(long n)
 				nRangeFrames--;
 			}
 
-			phdtextinfo[range[0]] = tex;
+			phdtextinfo[range[0]] = PHDToGLHandle(tex);
 			range++;
 		}
 	}
@@ -726,13 +751,7 @@ void S_InitialisePolyList(bool clearBackBuffer)
 
 	if (GtFullScreenClearNeeded)
 	{
-#if (DIRECT3D_VERSION < 0x900)
-		DXCheckForLostSurfaces();
-#endif
 		DD_SpinMessageLoop(0);
-#if (DIRECT3D_VERSION < 0x900)
-		DXDoFlipWait();
-#endif
 		DXClearBuffers(3, 0);
 		GtFullScreenClearNeeded = 0;
 		clearBackBuffer = 0;
@@ -740,12 +759,12 @@ void S_InitialisePolyList(bool clearBackBuffer)
 
 	flags = 256;
 
-	if (clearBackBuffer || HWConfig.nFillMode < D3DFILL_SOLID)
+	if (clearBackBuffer)
 		flags |= 2;
 
 	flags |= 8;
 
-	DXClearBuffers(flags, 0);
+	glClear(flags);
 	HWR_BeginScene();
 	phd_InitPolyList();
 }
