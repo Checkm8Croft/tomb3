@@ -12,9 +12,8 @@ Pull Requests are always welcome!
 Use the cmake file
 
 ## Progress
-I currently finished to porting the files, for now with minimal definitions, so not complete
-The executable will exit but when I try to run it gives error when it tries to find the symbols.
-
+I currently finished to porting the files, for now with minimal definitions, so not complete.
+Now I have an executable, now I have to implement the main windows functions
 ### Credits:
 Checkm8Croft: For porting the project
 

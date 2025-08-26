@@ -268,8 +268,3 @@ void T3_GoldifyString(char* string)
 		return;
 	}
 }
-
-int main(){
-    printf("tomb3 initialized");
-    return 0;
-}

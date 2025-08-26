@@ -10,6 +10,9 @@ bool AlphaBlendEnabled = false;
 DXCONFIG AppDXConfig;  // Aggiungi questa linea
 bool bAlphaTesting = false;
 DEVICEINFO AppDeviceInfo;  // Definizione
+bool AppWindowed = false;
+GLVERTEX* CurrentGLVertex = nullptr;
+bool bMonoScreen = false;
 // Implementazioni delle funzioni
 void GLSaveScreen() {
     GLint viewport[4];

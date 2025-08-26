@@ -106,8 +106,9 @@ void Log(const char* s, ...)
 }
 
 // Main loop di esempio
-int start(int argc, char** argv)
+int main(int argc, char** argv)
 {
+    printf("Starting Tomb Raider III...\n");
     App.width = 800;
     App.height = 600;
     App.windowed = true;
