@@ -37,7 +37,6 @@ float wibble_table[32];
 
 void ShutdownGame()
 {
-	RPC_close();
 	FreeWinPlay();
 	GlobalFree(TLVertexBuffer);
 	GlobalFree(TLUnRollBuffer);

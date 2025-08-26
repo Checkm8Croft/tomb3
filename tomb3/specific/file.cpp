@@ -66,6 +66,18 @@ void GlobalFree(void* ptr)
     free(ptr);
 }
 
+char* GetFullPathString(const char* filename) {
+    static char path[256];
+    const char* base = SDL_GetBasePath();
+    if (base) {
+        snprintf(path, sizeof(path), "%s%s", base, filename);
+        SDL_free((void*)base);
+    } else {
+        strncpy(path, filename, sizeof(path));
+    }
+    return path;
+}
+
 HANDLE CreateFile(const char* filename, int access, int share, void* security, int creation, int attributes, void* template_file)
 {
     const char* mode = "rb";

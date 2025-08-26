@@ -1,6 +1,6 @@
 #pragma once
 #include "../global/types.h"
-
+typedef unsigned long ulong;
 bool TIME_Init();
-ulong Sync();
-ulong SyncTicks(long skip);
+unsigned long Sync();
+unsigned long SyncTicks(long skip);

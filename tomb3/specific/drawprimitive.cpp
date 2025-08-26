@@ -2,7 +2,7 @@
 #include "drawprimitive.h"
 #include "winmain.h"
 #include "hwrender.h"
-#include <GL/gl.h>
+#include <OpenGL/gl.h>
 
 // Definizioni delle variabili globali
 DRAWPRIMITIVE DrawPrimitive;

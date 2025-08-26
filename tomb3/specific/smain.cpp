@@ -334,7 +334,6 @@ long GameMain()
 	if (!S_InitialiseSystem())
 		return 0;
 
-	RPC_Init();
 
 	if (tomb3.gold)
 	{

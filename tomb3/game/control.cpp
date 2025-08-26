@@ -90,7 +90,6 @@ long ControlPhase(long nframes, long demo_mode)
 
 	for (framecount += nframes; framecount > 0; framecount -= TICKS_PER_FRAME)
 	{
-		RPC_Update();
 
 		if (!gameflow.cheatmodecheck_disabled)
 			CheckCheatMode();

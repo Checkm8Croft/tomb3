@@ -468,9 +468,6 @@ long Display_Inventory(long mode)
 
 	do
 	{
-		RPC_title = mode == INV_TITLE_MODE;
-		RPC_Update();
-		RPC_title = 0;
 
 		GlobePointLight = (GlobePointLight + 16) & 0xFF;
 

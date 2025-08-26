@@ -12,7 +12,7 @@
 #include "../tomb3/tomb3.h"
 #include "../game/gameflow.h"
 #include "../global/types.h"
-#include <GL/gl.h> // Assicurati che questa include sia presente
+#include <OpenGL/gl.h> // Assicurati che questa include sia presente
 #define GL_SILENCE_DEPRECATION
 #include <OpenGL/gl3.h>
 #include <OpenGL/glext.h>

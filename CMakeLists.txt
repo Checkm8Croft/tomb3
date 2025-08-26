@@ -4,21 +4,13 @@ project(tomb3)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_definitions(GL_SILENCE_DEPRECATION)
-find_package(OpenGL REQUIRED)
-include_directories(${OpenGL_INCLUDE_DIR})
-include_directories(/usr/local/include) # Forza include se serve
 
+# Trova i pacchetti
+find_package(OpenGL REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
-include_directories(${SDL2_INCLUDE_DIRS})
-# Per OpenAL
-find_package(OpenAL REQUIRED)
-# O per SDL_mixer
 find_package(SDL2_mixer REQUIRED)
-# Nel tuo CMakeLists.txt aggiungi:
-target_link_libraries(tomb3 SDL2 SDL2_image SDL2_mixer)
-add_definitions(-D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L)
-# Include directory globale
+# Include directories
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/tomb3
     ${CMAKE_CURRENT_SOURCE_DIR}/tomb3/game
@@ -27,9 +19,16 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/tomb3/script
     ${CMAKE_CURRENT_SOURCE_DIR}/tomb3/specific
     ${CMAKE_CURRENT_SOURCE_DIR}/tomb3/3dsystem
+    ${OpenGL_INCLUDE_DIRS}
+    ${SDL2_INCLUDE_DIRS}
+    ${SDL2_IMAGE_INCLUDE_DIRS}
+    ${SDL2_MIXER_INCLUDE_DIRS}
+    /usr/local/include
 )
 
-# Lista di tutti i file sorgente (puoi aggiornarla con nuovi file)
+add_definitions(-D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L)
+
+# Lista di tutti i file sorgente
 set(SOURCES
     tomb3/tomb3/tomb3.cpp
     tomb3/tomb3/pch.cpp
@@ -37,6 +36,7 @@ set(SOURCES
     tomb3/3dsystem/hwinsert.cpp
     tomb3/3dsystem/phd_math.cpp
     tomb3/3dsystem/scalespr.cpp
+    tomb3/global/global.cpp
     tomb3/game/51baton.cpp
     tomb3/game/51civvy.cpp
     tomb3/game/51laser.cpp
@@ -132,7 +132,6 @@ set(SOURCES
     tomb3/game/willboss.cpp
     tomb3/game/wingmute.cpp
     tomb3/game/winston.cpp
-    tomb3/newstuff/discord.cpp
     tomb3/newstuff/LaraDraw.cpp
     tomb3/newstuff/map.cpp
     tomb3/newstuff/pausemenu.cpp
@@ -173,5 +172,21 @@ set(SOURCES
 
 add_executable(tomb3 ${SOURCES})
 
-target_link_libraries(tomb3 ${SDL2_LIBRARIES})
-target_link_libraries(tomb3 ${OpenGL_LIBRARIES})
+# Linking corretto
+target_link_libraries(tomb3 
+    ${OpenGL_LIBRARIES}
+    ${SDL2_LIBRARIES}
+    ${SDL2_IMAGE_LIBRARIES}
+    ${SDL2_MIXER_LIBRARIES}
+)
+
+if(APPLE)
+    target_link_libraries(tomb3
+        "-framework OpenGL"
+        "-framework Cocoa"
+        "-framework IOKit"
+        "-framework CoreVideo"
+        "-framework AudioToolbox"
+        "-framework ForceFeedback"
+    )
+endif()
