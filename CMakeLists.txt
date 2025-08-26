@@ -15,7 +15,8 @@ include_directories(${SDL2_INCLUDE_DIRS})
 find_package(OpenAL REQUIRED)
 # O per SDL_mixer
 find_package(SDL2_mixer REQUIRED)
-
+# Nel tuo CMakeLists.txt aggiungi:
+target_link_libraries(tomb3 SDL2 SDL2_image SDL2_mixer)
 add_definitions(-D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L)
 # Include directory globale
 include_directories(

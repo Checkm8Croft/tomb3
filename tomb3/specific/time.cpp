@@ -1,31 +1,31 @@
 #include "../tomb3/pch.h"
 #include "time.h"
-
-static __int64 frequency, ticks;
-
+#include <SDL2/SDL.h>
+static Uint64 frequency, ticks;
 static void UpdateTicks()
 {
-	__int64 counter;
+	Uint64 counter;
 
-	QueryPerformanceCounter((LARGE_INTEGER*)&counter);
+	counter = SDL_GetPerformanceCounter();
 	ticks = counter;
 }
 
 bool TIME_Init()
 {
-	__int64 pfq;
+	Uint64 pfq;
 
-	if (!QueryPerformanceFrequency((LARGE_INTEGER*)&pfq))
+	pfq = SDL_GetPerformanceFrequency();
+	if (!pfq)
 		return 0;
 
-	frequency = pfq / TICKS_PER_SECOND;
+    frequency = pfq;
 	UpdateTicks();
 	return 1;
 }
 
 ulong Sync()
 {
-	__int64 last;
+	Uint64 last;
 
 	last = ticks;
 	UpdateTicks();
@@ -35,7 +35,7 @@ ulong Sync()
 ulong SyncTicks(long skip)
 {
 	double passed, dskip;
-	__int64 last;
+	Uint64 last;
 
 	passed = 0;
 	dskip = (double)skip;
