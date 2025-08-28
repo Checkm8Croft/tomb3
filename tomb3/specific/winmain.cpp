@@ -1,4 +1,12 @@
 #include "../tomb3/pch.h"
+#include "../tomb3/tomb3.h"
+#include "utils.h"
+#include "smain.h"
+#include "option.h"
+#include "ds.h"
+#include "di.h"
+#include "audio.h"
+#include "display.h"
 #include "winmain.h"
 #include "hwrender.h"
 #include "../game/invfunc.h"
@@ -108,31 +116,91 @@ void Log(const char* s, ...)
 // Main loop di esempio
 int main(int argc, char** argv)
 {
-    printf("Starting Tomb Raider III...\n");
-    App.width = 800;
-    App.height = 600;
-    App.windowed = true;
-    App.rScreen.left = 100;
-    App.rScreen.top = 100;
-
-    if (!GLAppInit(nullptr, nullptr, true)) {
-        S_ExitSystem("Unable to initialize OpenGL/SDL2 window");
+     if (argc > 0) {
+        G_lpCmdLine = argv[0];  // o costruisci la command line dagli argv
+    } else {
+        G_lpCmdLine = "";
+    }
+    printf("[1] Starting Tomb Raider III...\n");
+    
+    // Inizializzazione SDL2
+    printf("[2] Initializing SDL2...\n");
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS) < 0) {
+        printf("SDL_Init failed: %s\n", SDL_GetError());
         return 1;
     }
+    printf("[3] SDL2 initialized successfully\n");
 
-    // Game loop
-    bool running = true;
-    while (running) {
-        SDL_Event event;
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT)
-                running = false;
-        }
-        // Rendering e logica qui
-        SDL_GL_SwapWindow(sdlWindow);
-        AppFrameRate();
+    // Crea la finestra SDL2
+    printf("[4] Creating SDL2 window...\n");
+    SDL_Window* sdlWindow = SDL_CreateWindow("Tomb Raider III",
+                                            SDL_WINDOWPOS_CENTERED,
+                                            SDL_WINDOWPOS_CENTERED,
+                                            800, 600,
+                                            SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    
+    if (!sdlWindow) {
+        printf("SDL_CreateWindow failed: %s\n", SDL_GetError());
+        return 1;
     }
+    printf("[5] SDL2 window created successfully\n");
 
-    AppExit();
+    // Crea contesto OpenGL
+    printf("[6] Creating OpenGL context...\n");
+    SDL_GLContext glContext = SDL_GL_CreateContext(sdlWindow);
+    if (!glContext) {
+        printf("SDL_GL_CreateContext failed: %s\n", SDL_GetError());
+        return 1;
+    }
+    printf("[7] OpenGL context created successfully\n");
+
+    // Inizializza il gioco
+   printf("[8] Loading game settings...\n");
+bool settingsLoaded = S_LoadSettings();
+
+// Controlla se G_lpCmdLine è NULL prima di chiamare UT_FindArg
+bool setupArg = false;
+if (G_lpCmdLine != nullptr) {
+    setupArg = UT_FindArg("setup");
+} else {
+    printf("G_lpCmdLine is NULL, skipping setup check\n");
+}
+
+printf("[8.5] S_LoadSettings: %d, setupArg: %d\n", settingsLoaded, setupArg);
+
+if (setupArg) {
+    printf("Setup required - exiting\n");
+    return 0;
+}
+printf("[9] Game settings loaded successfully\n");
+    // Inizializza sistemi del gioco
+    printf("[10] Initializing TIME system...\n");
+    TIME_Init();
+    printf("[11] Initializing HWR system...\n");
+    HWR_Init();
+    printf("[12] Starting DS system...\n");
+    DS_Start();
+    printf("[13] Starting DI system...\n");
+    DI_Start();
+    printf("[14] Initializing ACM system...\n");
+    ACMInit();
+    printf("[15] Setting up screen size...\n");
+    setup_screen_size();
+    
+    game_closedown = 0;
+    GtWindowClosed = 0;
+    GtFullScreenClearNeeded = 0;
+
+    printf("[16] Starting main game loop...\n");
+    // Avvia il game loop principale
+    GameMain();
+
+    printf("[17] Game ended, cleaning up...\n");
+    // Cleanup
+    SDL_GL_DeleteContext(glContext);
+    SDL_DestroyWindow(sdlWindow);
+    SDL_Quit();
+    
+    printf("[18] Cleanup completed, exiting...\n");
     return 0;
 }

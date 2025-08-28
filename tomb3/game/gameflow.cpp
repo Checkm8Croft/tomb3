@@ -79,7 +79,7 @@ ushort GF_Cutscene_Orientation = 0x4000;
 short GF_LoadingPic = -1;
 short GF_NoFloor;
 short GF_DeadlyWater;
-short GF_SunsetEnabled;
+short GF_SunsetEnabled = 0;
 short GF_RemoveWeapons;
 short GF_NumSecrets;
 short GF_RemoveAmmo;
@@ -99,11 +99,13 @@ short NextAdventure;
 
 long GF_LoadScriptFile(const char* name)
 {
+	printf("Loading script file: %s\n", name);
+	SDL_Log("DEBUG: GF_LoadScriptFile ENTER - name: %s", name);
 	GF_SunsetEnabled = 0;
 
 	if (!S_LoadGameFlow(name))
 		return 0;
-
+	printf("Game flow loaded successfully\n");
 #ifdef _DEBUG
 	gameflow.play_any_level = 1;
 #endif
@@ -162,6 +164,7 @@ long GF_LoadScriptFile(const char* name)
 
 	SetRequesterHeading(&Load_Game_Requester, GF_GameStrings[GT_SELECTLEVEL], 0, 0, 0);
 	SetRequesterHeading(&Level_Select_Requester, GF_GameStrings[GT_SELECTLEVEL], 0, 0, 0);
+	printf("Script file loaded\n");
 	return 1;
 }
 

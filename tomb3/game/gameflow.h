@@ -1,3 +1,12 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+long GF_LoadScriptFile(const char* name);
+
+#ifdef __cplusplus
+}
+#endif
 #pragma once
 #include "../global/types.h"
 

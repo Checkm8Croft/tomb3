@@ -76,3 +76,8 @@ void HWR_EndScene() {
     glFlush();
     SDL_GL_SwapWindow(App.sdl_window);
 }
+void DefaultConflict()
+{
+    // Implementazione vuota - nessun conflitto da risolvere
+    printf("DefaultConflict called (empty implementation)\n");
+}

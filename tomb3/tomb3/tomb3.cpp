@@ -165,13 +165,18 @@ void T3_SaveSettings()
 
 bool T3_LoadSettings()
 {
-    if (!OpenConfig(CONFIG_FILE))
-    {
-        T3_InitSettings();
-        return false;
-    }
+    printf("[8.4.1] T3_LoadSettings started...\n");
 
+    printf("[8.4.2] Opening config file...\n");
+    // if (!OpenConfig(CONFIG_FILE)) temporaly to don't use
+    // {
+    //     printf("[8.4.3] Config file not found, initializing default settings...\n");
+    //     T3_InitSettings();
+    //     return false;
+    // }
+    printf("[8.4.4] Config file opened successfully\n");
     ulong tmp;
+    printf("[8.4.5] Reading VM setting...\n");
     CFG_ReadLong("VM", &tmp, 0); App.glConfig.nVMode = (long)tmp;
     CFG_ReadLong("zbuffer", &tmp, 0); App.glConfig.bZBuffer = (long)tmp;
     CFG_ReadLong("dither", &tmp, 0); App.glConfig.Dither = (long)tmp;
@@ -184,9 +189,9 @@ bool T3_LoadSettings()
     CFG_ReadLong("WindowY", &tmp, 0); App.rScreen.top = (int)tmp;
     CFG_ReadFloat("Gamma", &GammaOption, 0);
 
-    // CFG_ReadBlock("keyLayout", &layout[1][0], sizeof(layout) / 2, 0); // Implementa se serve
+    printf("[8.4.8] Calling DefaultConflict...\n");// CFG_ReadBlock("keyLayout", &layout[1][0], sizeof(layout) / 2, 0); // Implementa se serve
     DefaultConflict();
-
+    printf("[8.4.9] Reading footprints setting...\n");
     CFG_ReadBool("footprints", &tomb3.footprints, 1);
     CFG_ReadBool("pickup_display", &tomb3.pickup_display, 1);
     CFG_ReadBool("improved_rain", &tomb3.improved_rain, 1);
@@ -229,8 +234,9 @@ bool T3_LoadSettings()
     CFG_ReadFloat("INV_Scale", &tomb3.INV_Scale, 1.0F);
     CFG_ReadFloat("unwater_music_mute", &tomb3.unwater_music_mute, 0.8F);
     CFG_ReadFloat("inv_music_mute", &tomb3.inv_music_mute, 0.8F);
-
+    printf("[8.4.10] Closing config...\n");
     CloseConfig();
+        printf("[8.4.11] T3_LoadSettings completed successfully\n");
     return true;
 }
 
