@@ -22,6 +22,12 @@
 #include "../newstuff/map.h"
 #include "../tomb3/tomb3.h"
 
+void do_control_option(INVENTORY_ITEM* item){}
+void do_compass_option(INVENTORY_ITEM* item){}
+void SetPassportRequesterSize(REQUEST_INFO* req){}
+void do_passport_option(INVENTORY_ITEM* item){}
+void do_levelselect_option(INVENTORY_ITEM* item){}
+
 static GLOBE_LEVEL GlobeLevelAngles[7] =
 {
 	{ -1536, -7936, 1536, GT_LSLONDON },

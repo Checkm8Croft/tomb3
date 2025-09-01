@@ -250,3 +250,12 @@ void interpretSequence(FILE* fp, short* ptr, long level)
 		}
 	}
 }
+
+// ...existing code...
+
+int interpreter(int argc, char** argv)
+{
+    printf("Interpreter started.\n");
+    interpretSequence(0, nullptr, 0); // Esempio di chiamata, sostituire con parametri reali
+    return 0;
+}

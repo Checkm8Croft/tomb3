@@ -14,15 +14,21 @@
 // Strutture dati per OpenGL
 static SDL_Window* G_window;
 static SDL_GLContext G_glContext;
-
+bool WinDXInit(DEVICEINFO* device, DXCONFIG* config, bool firstTime){ return true; }
+void DXCreateMaxTPages(bool firstTime){}
 // Variabile globale App
 extern APPWINDOW App;
-
+void WinFreeDX(bool free_dx){}
 // These should be defined in the global scope based on original DX code
 extern DEVICEINFO AppDeviceInfo;
 extern DXCONFIG AppDXConfig;
 extern bool AppWindowed;
-
+void Log(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
+}
 static void* AddStruct(void* p, long num, long size)
 {
     void* ptr;

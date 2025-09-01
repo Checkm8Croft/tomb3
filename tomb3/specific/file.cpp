@@ -26,11 +26,13 @@
 #include "../tomb3/tomb3.h"
 #include <SDL.h>
 #include "dxshell.h"
-//#include "../script/scripter.h"
+#include "../script/scripter.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 extern DEVICEINFO AppDeviceInfo;
 extern DXCONFIG AppDXConfig;
-
+void AdjustTextureUVs(bool reset){}
 //gameflow loading checks
 #define LOAD_GF(main, allocSize, buffer, readSize)\
 {\
@@ -38,6 +40,8 @@ main = (char**)GlobalAlloc(GMEM_FIXED, allocSize);\
 if (!main) return 0;\
 if (!Read_Strings(readSize, main, &buffer, &read, file)) return 0;\
 }
+
+void build_ext(char* name, const char* ext){}
 
 CHANGE_STRUCT* changes;
 RANGE_STRUCT* ranges;
@@ -66,16 +70,10 @@ void GlobalFree(void* ptr)
     free(ptr);
 }
 
-char* GetFullPathString(const char* filename) {
-    static char path[256];
-    const char* base = SDL_GetBasePath();
-    if (base) {
-        snprintf(path, sizeof(path), "%s%s", base, filename);
-        SDL_free((void*)base);
-    } else {
-        strncpy(path, filename, sizeof(path));
-    }
-    return path;
+const char* GetFullPath(const char* name){
+    static char fullPath[1024];
+    snprintf(fullPath, sizeof(fullPath), "%s/%s", name);
+    return fullPath;
 }
 void FreeWinPlay() {
     // Implementazione se necessaria
@@ -810,79 +808,150 @@ void LoadDemFile(const char* name)
 		CloseHandle(file);
 	}
 }
+void load_string_array_c(FILE* file, char*** out_ptr, char** out_buffer, int count)
+{
+    size_t str_size = 32;
+    *out_buffer = (char*)malloc(str_size * count);
+    fread(*out_buffer, str_size, count, file);
+    *out_ptr = (char**)malloc(sizeof(char*) * count);
+    for (int i = 0; i < count; ++i)
+        (*out_ptr)[i] = (*out_buffer) + i * str_size;
+}
+short* GF_Offsets = nullptr;
+
 
 long S_LoadGameFlow(const char* name)
 {
-    HANDLE file;
-    ulong read;
-    short num;
-
-    name = GetFullPath(name);
-    file = CreateFile(name, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-
-    if (file == INVALID_HANDLE_VALUE)
+    printf("[LoadGameFlow] Opening file: %s\n", name);
+    FILE* file = fopen(name, "rb");
+    if (!file) {
+        printf("[LoadGameFlow] ERROR: File not found!\n");
         return 0;
+    }
 
-    MyReadFile(file, &GF_ScriptVersion, sizeof(long), &read, 0);
-
-    if (GF_ScriptVersion != 3)
+    printf("[LoadGameFlow] File opened\n");
+    long GF_ScriptVersion = 0;
+    fread(&GF_ScriptVersion, sizeof(long), 1, file);
+    printf("[LoadGameFlow] Script version: %ld\n", GF_ScriptVersion);
+    if (GF_ScriptVersion != 3) {
+        printf("[LoadGameFlow] ERROR: Script version mismatch!\n");
+        fclose(file);
         return 0;
+    }
 
-    MyReadFile(file, GF_Description, 256, &read, 0);
-    MyReadFile(file, &num, sizeof(short), &read, 0);
+    printf("[LoadGameFlow] Reading GAMEFLOW_INFO...\n");
+    fread(GF_Description, 256, 1, file);
+    printf("[LoadGameFlow] Description: %.32s\n", GF_Description);
 
-    if (num != sizeof(GAMEFLOW_INFO))
+    short num = 0;
+    fread(&num, sizeof(short), 1, file);
+    printf("[LoadGameFlow] GAMEFLOW_INFO size: %d (expected %zu)\n", num, sizeof(GAMEFLOW_INFO));
+    if (num != sizeof(GAMEFLOW_INFO)) {
+        printf("[LoadGameFlow] ERROR: GAMEFLOW_INFO size mismatch!\n");
+        fclose(file);
         return 0;
+    }
 
-    MyReadFile(file, &gameflow, sizeof(GAMEFLOW_INFO), &read, 0);
+    fread(&gameflow, sizeof(GAMEFLOW_INFO), 1, file);
+    printf("[LoadGameFlow] gameflow.num_levels: %d\n", gameflow.num_levels);
+    printf("[LoadGameFlow] gameflow.num_picfiles: %d\n", gameflow.num_picfiles);
+    printf("[LoadGameFlow] gameflow.num_titlefiles: %d\n", gameflow.num_titlefiles);
+    printf("[LoadGameFlow] gameflow.num_fmvfiles: %d\n", gameflow.num_fmvfiles);
+    printf("[LoadGameFlow] gameflow.num_cutfiles: %d\n", gameflow.num_cutfiles);
 
-    LOAD_GF(GF_Level_Names, sizeof(char*) * gameflow.num_levels, GF_levelnames_buffer, gameflow.num_levels)
-    LOAD_GF(GF_picfilenames, sizeof(char*) * gameflow.num_picfiles, GF_picfilenames_buffer, gameflow.num_picfiles)
-    LOAD_GF(GF_titlefilenames, sizeof(char*) * gameflow.num_titlefiles, GF_titlefilenames_buffer, gameflow.num_titlefiles)
-    LOAD_GF(GF_fmvfilenames, sizeof(char*) * gameflow.num_fmvfiles, GF_fmvfilenames_buffer, gameflow.num_fmvfiles)
-    LOAD_GF(GF_levelfilenames, sizeof(char*) * gameflow.num_levels, GF_levelfilenames_buffer, gameflow.num_levels)
-    LOAD_GF(GF_cutscenefilenames, sizeof(char*) * gameflow.num_cutfiles, GF_cutscenefilenames_buffer, gameflow.num_cutfiles)
+    printf("[LoadGameFlow] Reading level names...\n");
+    load_string_array_c(file, &GF_Level_Names, &GF_levelnames_buffer, gameflow.num_levels);
+    printf("[LoadGameFlow] Loaded level names\n");
+    printf("[LoadGameFlow] Reading pic filenames...\n");
+    load_string_array_c(file, &GF_picfilenames, &GF_picfilenames_buffer, gameflow.num_picfiles);
+    printf("[LoadGameFlow] Loaded pic filenames\n");
+    printf("[LoadGameFlow] Reading title filenames...\n");
+    load_string_array_c(file, &GF_titlefilenames, &GF_titlefilenames_buffer, gameflow.num_titlefiles);
+    printf("[LoadGameFlow] Loaded title filenames\n");
+    printf("[LoadGameFlow] Reading fmv filenames...\n");
+    load_string_array_c(file, &GF_fmvfilenames, &GF_fmvfilenames_buffer, gameflow.num_fmvfiles);
+    printf("[LoadGameFlow] Loaded fmv filenames\n");
+    printf("[LoadGameFlow] Reading level filenames...\n");
+    load_string_array_c(file, &GF_levelfilenames, &GF_levelfilenames_buffer, gameflow.num_levels);
+    printf("[LoadGameFlow] Loaded level filenames\n");
+    printf("[LoadGameFlow] Reading cutscene filenames...\n");
+    load_string_array_c(file, &GF_cutscenefilenames, &GF_cutscenefilenames_buffer, gameflow.num_cutfiles);
+    printf("[LoadGameFlow] Loaded cutscene filenames\n");
 
-    MyReadFile(file, GF_Offsets, sizeof(short) * (gameflow.num_levels + 1), &read, 0);
-    MyReadFile(file, &num, sizeof(short), &read, 0);
-    GF_sequence_buffer = (short*)GlobalAlloc(GMEM_FIXED, num);
+    printf("[LoadGameFlow] Reading GF_Offsets...\n");
+    GF_Offsets = (short*)malloc(sizeof(short) * (gameflow.num_levels + 1));
+    fread(GF_Offsets, sizeof(short), gameflow.num_levels + 1, file);
+    printf("[LoadGameFlow] Loaded GF_Offsets\n");
 
-    if (!GF_sequence_buffer)
+    printf("[LoadGameFlow] Reading sequence buffer...\n");
+    fread(&num, sizeof(short), 1, file);
+    printf("[LoadGameFlow] Sequence buffer size: %d\n", num);
+    GF_sequence_buffer = (short*)malloc(num);
+    if (!GF_sequence_buffer) {
+        printf("[LoadGameFlow] ERROR: Could not allocate sequence buffer!\n");
+        fclose(file);
         return 0;
-
-    MyReadFile(file, GF_sequence_buffer, num, &read, 0);
+    }
+    fread(GF_sequence_buffer, num, 1, file);
     GF_frontendSequence = GF_sequence_buffer;
+    printf("[LoadGameFlow] Loaded sequence buffer\n");
 
     for (int i = 0; i < gameflow.num_levels; i++)
         GF_level_sequence_list[i] = GF_sequence_buffer + (GF_Offsets[i + 1] / 2);
+    printf("[LoadGameFlow] Set level sequence list\n");
 
-    if (gameflow.num_demos)
-        MyReadFile(file, GF_valid_demos, sizeof(short) * gameflow.num_demos, &read, 0);
+    if (gameflow.num_demos) {
+        fread(GF_valid_demos, sizeof(short), gameflow.num_demos, file);
+        printf("[LoadGameFlow] Loaded valid demos\n");
+    }
 
-    MyReadFile(file, &num, sizeof(short), &read, 0);
-
-    if (num != GT_NUM_GAMESTRINGS)
+    printf("[LoadGameFlow] Reading game strings...\n");
+    fread(&num, sizeof(short), 1, file);
+    printf("[LoadGameFlow] Game strings count: %d (expected %d)\n", num, GT_NUM_GAMESTRINGS);
+    if (num != GT_NUM_GAMESTRINGS) {
+        printf("[LoadGameFlow] ERROR: Game strings count mismatch!\n");
+        fclose(file);
         return 0;
+    }
 
-    LOAD_GF(GF_GameStrings, sizeof(char*) * GT_NUM_GAMESTRINGS, GF_GameStrings_buffer, GT_NUM_GAMESTRINGS)
-    LOAD_GF(GF_PCStrings, sizeof(char*) * PCSTR_NUM_STRINGS, GF_PCStrings_buffer, PCSTR_NUM_STRINGS)
+    load_string_array_c(file, &GF_GameStrings, &GF_GameStrings_buffer, GT_NUM_GAMESTRINGS);
+    printf("[LoadGameFlow] Loaded game strings\n");
+    load_string_array_c(file, &GF_PCStrings, &GF_PCStrings_buffer, PCSTR_NUM_STRINGS);
+    printf("[LoadGameFlow] Loaded PC strings\n");
 
-    LOAD_GF(GF_Puzzle1Strings, sizeof(char*) * gameflow.num_levels, GF_Puzzle1Strings_buffer, gameflow.num_levels)
-    LOAD_GF(GF_Puzzle2Strings, sizeof(char*) * gameflow.num_levels, GF_Puzzle2Strings_buffer, gameflow.num_levels)
-    LOAD_GF(GF_Puzzle3Strings, sizeof(char*) * gameflow.num_levels, GF_Puzzle3Strings_buffer, gameflow.num_levels)
-    LOAD_GF(GF_Puzzle4Strings, sizeof(char*) * gameflow.num_levels, GF_Puzzle4Strings_buffer, gameflow.num_levels)
+    printf("[LoadGameFlow] Reading Pickup1 strings...\n");
+    load_string_array_c(file, &GF_Pickup1Strings, &GF_Pickup1Strings_buffer, gameflow.num_levels);
+    printf("[LoadGameFlow] Loaded Pickup1 strings\n");
+    printf("[LoadGameFlow] Reading Pickup2 strings...\n");
+    load_string_array_c(file, &GF_Pickup2Strings, &GF_Pickup2Strings_buffer, gameflow.num_levels);
+    printf("[LoadGameFlow] Loaded Pickup2 strings\n");
+    printf("[LoadGameFlow] Reading Puzzle1 strings...\n");
+    load_string_array_c(file, &GF_Puzzle1Strings, &GF_Puzzle1Strings_buffer, gameflow.num_levels);
+    printf("[LoadGameFlow] Loaded Puzzle1 strings\n");
+    printf("[LoadGameFlow] Reading Puzzle2 strings...\n");
+    load_string_array_c(file, &GF_Puzzle2Strings, &GF_Puzzle2Strings_buffer, gameflow.num_levels);
+    printf("[LoadGameFlow] Loaded Puzzle2 strings\n");
+    printf("[LoadGameFlow] Reading Puzzle3 strings...\n");
+    load_string_array_c(file, &GF_Puzzle3Strings, &GF_Puzzle3Strings_buffer, gameflow.num_levels);
+    printf("[LoadGameFlow] Loaded Puzzle3 strings\n");
+    printf("[LoadGameFlow] Reading Puzzle4 strings...\n");
+    load_string_array_c(file, &GF_Puzzle4Strings, &GF_Puzzle4Strings_buffer, gameflow.num_levels);
+    printf("[LoadGameFlow] Loaded Puzzle4 strings\n");
 
-    LOAD_GF(GF_Pickup1Strings, sizeof(char*) * gameflow.num_levels, GF_Pickup1Strings_buffer, gameflow.num_levels)
-    LOAD_GF(GF_Pickup2Strings, sizeof(char*) * gameflow.num_levels, GF_Pickup2Strings_buffer, gameflow.num_levels)
+    printf("[LoadGameFlow] Reading Key1 strings...\n");
+    load_string_array_c(file, &GF_Key1Strings, &GF_Key1Strings_buffer, gameflow.num_levels);
+    printf("[LoadGameFlow] Loaded Key1 strings\n");
+    printf("[LoadGameFlow] Reading Key2 strings...\n");
+    load_string_array_c(file, &GF_Key2Strings, &GF_Key2Strings_buffer, gameflow.num_levels);
+    printf("[LoadGameFlow] Loaded Key2 strings\n");
+    printf("[LoadGameFlow] Reading Key3 strings...\n");
+    load_string_array_c(file, &GF_Key3Strings, &GF_Key3Strings_buffer, gameflow.num_levels);
+    printf("[LoadGameFlow] Loaded Key3 strings\n");
+    printf("[LoadGameFlow] Reading Key4 strings...\n");
+    load_string_array_c(file, &GF_Key4Strings, &GF_Key4Strings_buffer, gameflow.num_levels);
+    printf("[LoadGameFlow] Loaded Key4 strings\n");
 
-    LOAD_GF(GF_Key1Strings, sizeof(char*) * gameflow.num_levels, GF_Key1Strings_buffer, gameflow.num_levels)
-    LOAD_GF(GF_Key2Strings, sizeof(char*) * gameflow.num_levels, GF_Key2Strings_buffer, gameflow.num_levels)
-    LOAD_GF(GF_Key3Strings, sizeof(char*) * gameflow.num_levels, GF_Key3Strings_buffer, gameflow.num_levels)
-    LOAD_GF(GF_Key4Strings, sizeof(char*) * gameflow.num_levels, GF_Key4Strings_buffer, gameflow.num_levels)
-
-    CloseHandle(file);
-
-//  OutputScript();
-
+    fclose(file);
+    printf("[LoadGameFlow] Completed successfully!\n");
     return 1;
 }

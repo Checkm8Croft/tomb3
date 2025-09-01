@@ -5,31 +5,25 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_definitions(GL_SILENCE_DEPRECATION)
 
-# Trova i pacchetti
-find_package(OpenGL REQUIRED)
-find_package(SDL2 REQUIRED)
-find_package(SDL2_image REQUIRED)
-find_package(SDL2_mixer REQUIRED)
-
-# Include directories
+# Percorsi fissi Homebrew Intel
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/tomb3
     ${CMAKE_CURRENT_SOURCE_DIR}/tomb3/game
     ${CMAKE_CURRENT_SOURCE_DIR}/tomb3/global
     ${CMAKE_CURRENT_SOURCE_DIR}/tomb3/newstuff
-    ${CMAKE_CURRENT_SOURCE_DIR}/tomb3/script
     ${CMAKE_CURRENT_SOURCE_DIR}/tomb3/specific
     ${CMAKE_CURRENT_SOURCE_DIR}/tomb3/3dsystem
-    ${OpenGL_INCLUDE_DIRS}
-    ${SDL2_INCLUDE_DIRS}
-    ${SDL2_IMAGE_INCLUDE_DIRS}
-    ${SDL2_MIXER_INCLUDE_DIRS}
     /usr/local/include
+    /usr/local/include/SDL2
+)
+
+link_directories(
+    /usr/local/lib       # forzo lib Homebrew
 )
 
 add_definitions(-D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L)
 
-# Lista di tutti i file sorgente
+# === SOURCES ===
 set(SOURCES
     tomb3/tomb3/tomb3.cpp
     tomb3/tomb3/pch.cpp
@@ -139,8 +133,6 @@ set(SOURCES
     tomb3/newstuff/psxsaves.cpp
     tomb3/newstuff/registry.cpp
     tomb3/newstuff/setupdlg.cpp
-    tomb3/script/interpreter.cpp
-    tomb3/script/scripter.cpp
     tomb3/specific/audio.cpp
     tomb3/specific/dd.cpp
     tomb3/specific/di.cpp
@@ -173,28 +165,23 @@ set(SOURCES
 
 add_executable(tomb3 ${SOURCES})
 
-# Linking corretto
-# Cerca le librerie manualmente
-find_library(SDL2_LIB SDL2 PATHS /usr/local/lib /opt/homebrew/lib)
-find_library(SDL2_IMAGE_LIB SDL2_image PATHS /usr/local/lib /opt/homebrew/lib)  
-find_library(SDL2_MIXER_LIB SDL2_mixer PATHS /usr/local/lib /opt/homebrew/lib)
-
 target_link_libraries(tomb3
-    ${SDL2_LIB}
-    ${SDL2_IMAGE_LIB}
-    ${SDL2_MIXER_LIB}
-    ${OpenGL_LIBRARIES}
+    PRIVATE
+        /usr/local/lib/libSDL2.dylib
+        /usr/local/lib/libSDL2_image.dylib
+        /usr/local/lib/libSDL2_mixer.dylib
 )
-# Rimuovi le righe con --start-group/--end-group e usa invece:
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,-undefined,dynamic_lookup")
 
 if(APPLE)
     target_link_libraries(tomb3
-        "-framework OpenGL"
-        "-framework Cocoa"
-        "-framework IOKit"
-        "-framework CoreVideo"
-        "-framework AudioToolbox"
-        "-framework ForceFeedback"
+        PRIVATE
+            "-framework OpenGL"
+            "-framework Cocoa"
+            "-framework IOKit"
+            "-framework CoreVideo"
+            "-framework AudioToolbox"
+            "-framework ForceFeedback"
     )
 endif()
+
+

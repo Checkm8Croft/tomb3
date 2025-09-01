@@ -257,7 +257,7 @@ enum gf_event_types
 extern GAMEFLOW_INFO gameflow;
 
 extern short* GF_level_sequence_list[24];
-extern short GF_Offsets[200];
+extern short* GF_Offsets;
 extern short GF_valid_demos[24];
 extern short GF_CDtracks[16];
 extern char GF_Description[256];

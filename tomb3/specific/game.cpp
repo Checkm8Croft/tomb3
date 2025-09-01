@@ -61,13 +61,16 @@ static long save_counter;
 #endif
 
 // Dichiarazioni forward per funzioni mancanti
-void S_LoadLevelFile(const char* name, long unk, long type);
-void S_UnloadLevelFile();
-void FreePictureTextures();
-void LoadPicture(const char* name);
+void S_LoadLevelFile(const char* name, long unk, long type){}
+void S_UnloadLevelFile(){}
+void FreePictureTextures(){}
+void LoadPicture(const char* name){
+    const char* fullPath = GetFullPath(name);
+    // Carica l'immagine utilizzando fullPath
+}
 void FadePictureUp(long speed);
 void FadePictureDown(long speed);
-void DrawPicture(long unk, long* texIndices, float zfar);
+void DrawPicture(long unk, long* texIndices, float zfar){}
 void DrawMonoScreen(long r, long g, long b);
 void CreateMonoScreen();
 void RemoveMonoScreen(long unk);

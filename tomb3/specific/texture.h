@@ -7,7 +7,7 @@
 // e usa solo le versioni OpenGL
 
 void DXTextureSetGreyScale(bool set);
-long DXTextureFindTextureSlot(GLTEXTUREINFO* tex);
+
 void DXClearAllTextures(GLTEXTUREINFO* list);
 void DXTextureCleanup(long index, GLTEXTUREINFO* list);
 GLTEXTUREINFO* DXRestoreSurfaceIfLost(long index, GLTEXTUREINFO* list);

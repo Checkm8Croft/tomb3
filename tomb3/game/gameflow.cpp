@@ -24,7 +24,7 @@ GAMEFLOW_INFO gameflow;
 long S_LoadGameFlow(const char* name);
 
 short* GF_level_sequence_list[24];
-short GF_Offsets[200];
+extern short* GF_Offsets;
 short GF_valid_demos[24];
 short GF_CDtracks[16];
 char GF_Description[256];

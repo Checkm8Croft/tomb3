@@ -82,5 +82,4 @@ void DXCreateMaxTPages(bool firstTime);
 void WinFreeDX(bool free_dx);
 bool WinDXInit(DEVICEINFO* device, DXCONFIG* config, bool firstTime);
 void HWR_InitState();
-void setup_screen_size();
 void Log(const char* format, ...);

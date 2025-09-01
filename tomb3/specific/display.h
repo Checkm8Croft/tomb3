@@ -6,7 +6,7 @@ void IncreaseScreenSize();
 void DecreaseScreenSize();
 void TempVideoAdjust(long a, double sizer);
 void TempVideoRemove();
-
+void setup_screen_size();
 extern double screen_sizer;
 extern double game_sizer;
 extern long VidSizeLocked;

@@ -256,3 +256,11 @@ void OutputScript()
 	OutputStrings(fp);
 	fclose(fp);
 }
+
+int scripter(int argc, char** argv)
+{
+    printf("Scripter started.\n");
+    OutputScript();
+    printf("Script exported.\n");
+    return 0;
+}

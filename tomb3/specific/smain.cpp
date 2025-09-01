@@ -380,6 +380,7 @@ printf("Current working directory: %s\n", cwd);
         {
             printf("[16.4.5] Failed to load script file\n");
             S_ExitSystem("GameMain: could not load script file");
+			
         }
     }
     printf("[16.5] Script file loaded successfully\n");

@@ -5,7 +5,12 @@
 #include <string.h>
 #include <time.h>
 #include "single.h"
-
+long DXTextureFindTextureSlot(GLTEXTUREINFO* tex){
+    for (long i = 0; i < MAX_TPAGES; i++) {
+        
+    }
+    return -1;
+}
 
 
 // Usa array C-style invece di vector

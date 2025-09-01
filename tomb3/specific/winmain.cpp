@@ -96,22 +96,6 @@ void S_ExitSystem(const char* msg)
     exit(1);
 }
 
-void Log(const char* s, ...)
-{
-#ifdef DO_LOG
-    va_list list;
-    char buf[4096];
-
-    if (!logF)
-        logF = fopen("tomb3_log.txt", "w+");
-
-    va_start(list, s);
-    vsnprintf(buf, sizeof(buf), s, list);
-    strcat(buf, "\n");
-    va_end(list);
-    fwrite(buf, strlen(buf), 1, logF);
-#endif
-}
 
 // Main loop di esempio
 int main(int argc, char** argv)

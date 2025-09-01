@@ -45,7 +45,7 @@ inline int MulDiv(int number, int numerator, int denominator) {
 extern GLuint phdtextinfo[MAX_TEXTURES];
 
 
-void HWR_SetCurrentTextureByHandle(TEXHANDLE texture);
+void HWR_SetCurrentTextureByHandle(TEXHANDLE texture){}
 void HWR_SetCurrentTextureByInfo(GLTEXTUREINFO* tex);
 static short shadow[6 + (3 * 8)] =
 {

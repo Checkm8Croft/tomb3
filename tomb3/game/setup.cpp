@@ -98,7 +98,7 @@ short IsRoomOutsideNo;
 char* OutsideRoomTable;
 short OutsideRoomOffsets[729];
 BOSS_STRUCT bossdata;
-long S_LoadLevelFile(char* name, long number, long type);
+long S_LoadLevelFile(char* name, long number, long type){}
 void GetAIPickups()
 {
 	ITEM_INFO* item;
