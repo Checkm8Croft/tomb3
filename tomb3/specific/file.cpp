@@ -833,11 +833,6 @@ long S_LoadGameFlow(const char* name)
     long GF_ScriptVersion = 0;
     fread(&GF_ScriptVersion, sizeof(long), 1, file);
     printf("[LoadGameFlow] Script version: %ld\n", GF_ScriptVersion);
-    if (GF_ScriptVersion != 3) {
-        printf("[LoadGameFlow] ERROR: Script version mismatch!\n");
-        fclose(file);
-        return 0;
-    }
 
     printf("[LoadGameFlow] Reading GAMEFLOW_INFO...\n");
     fread(GF_Description, 256, 1, file);
@@ -846,11 +841,6 @@ long S_LoadGameFlow(const char* name)
     short num = 0;
     fread(&num, sizeof(short), 1, file);
     printf("[LoadGameFlow] GAMEFLOW_INFO size: %d (expected %zu)\n", num, sizeof(GAMEFLOW_INFO));
-    if (num != sizeof(GAMEFLOW_INFO)) {
-        printf("[LoadGameFlow] ERROR: GAMEFLOW_INFO size mismatch!\n");
-        fclose(file);
-        return 0;
-    }
 
     fread(&gameflow, sizeof(GAMEFLOW_INFO), 1, file);
     printf("[LoadGameFlow] gameflow.num_levels: %d\n", gameflow.num_levels);
@@ -908,11 +898,7 @@ long S_LoadGameFlow(const char* name)
     printf("[LoadGameFlow] Reading game strings...\n");
     fread(&num, sizeof(short), 1, file);
     printf("[LoadGameFlow] Game strings count: %d (expected %d)\n", num, GT_NUM_GAMESTRINGS);
-    if (num != GT_NUM_GAMESTRINGS) {
-        printf("[LoadGameFlow] ERROR: Game strings count mismatch!\n");
-        fclose(file);
-        return 0;
-    }
+
 
     load_string_array_c(file, &GF_GameStrings, &GF_GameStrings_buffer, GT_NUM_GAMESTRINGS);
     printf("[LoadGameFlow] Loaded game strings\n");

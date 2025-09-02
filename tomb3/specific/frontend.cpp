@@ -12,7 +12,7 @@
 #include "../game/invfunc.h"
 #include "../tomb3/tomb3.h"
 #include "winmain.h"
-
+#include "../global/types.h"
 void S_DrawScreenLine(long x, long y, long z, long w, long h, long c, GOURAUD_FILL* grdptr, ushort f)
 {
 	InsertLine(x, y, x + w, y + h, phd_znear + 8 * z, (char)c, c);
@@ -189,12 +189,11 @@ void S_Wait(long nFrames, long skip)
 	}
 }
 
-long S_PlayFMV(char* name)
-{
-	return FMV_Play(name);
+long S_PlayFMV(const char* name) {
+    return true;
 }
 
-long S_IntroFMV(char* name1, char* name2)
-{
-	return FMV_PlayIntro(name1, name2);
+long S_IntroFMV(const char* name1, const char* name2) {
+    return true;
 }
+

@@ -5,19 +5,21 @@
 
 static char* OptionToText(long opt)
 {
-	static char buf[128];
+    static char buf[128];
+    printf("[SCRIPTER] OptionToText: %ld\n", opt); // debug
 
-	if (opt == EXIT_TO_TITLE)
-		sprintf(buf, "EXIT_TO_TITLE");
-	else if (opt & STARTDEMO)
-		sprintf(buf, "DEMO %i", opt & ~STARTDEMO);	//check me
-	else if (opt == EXITGAME)
-		sprintf(buf, "EXITGAME");
-	else
-		sprintf(buf, "%i", opt);
+    if (opt == EXIT_TO_TITLE)
+        sprintf(buf, "EXIT_TO_TITLE");
+    else if (opt & STARTDEMO)
+        sprintf(buf, "DEMO %i", opt & ~STARTDEMO);
+    else if (opt == EXITGAME)
+        sprintf(buf, "EXITGAME");
+    else
+        sprintf(buf, "%i", opt);
 
-	return buf;
+    return buf;
 }
+
 
 char* LanguageToText(uchar language)
 {
@@ -63,11 +65,14 @@ char* LanguageToText(uchar language)
 
 static void WriteDescription(FILE* fp)
 {
-	fprintf(fp, "Description: %s\n", GF_Description);
-	fprintf(fp, "\n");
-	fprintf(fp, "/********************************************************************************************/\n");
-	fprintf(fp, "\n");
+    if (!GF_Description) {
+        fprintf(stderr, "[SCRIPTER] GF_Description is NULL!\n");
+        return;
+    }
+    fprintf(fp, "Description: %s\n", GF_Description);
+    fprintf(fp, "\n");
 }
+
 
 static void WriteMainOptions(FILE* fp)
 {
@@ -115,19 +120,28 @@ static void WriteMainOptions(FILE* fp)
 
 static void WriteTitleOptions(FILE* fp)
 {
-	fprintf(fp, "Title:\n");
-	fprintf(fp, "Game: %s\n", GF_titlefilenames[0]);
+    fprintf(fp, "Title:\n");
 
-	for (int i = 1; i < gameflow.num_titlefiles; i++)
-		fprintf(fp, "PCfile: %s\n", GF_titlefilenames[i]);
+    if (!GF_titlefilenames || !GF_titlefilenames[0]) {
+        fprintf(stderr, "[SCRIPTER] GF_titlefilenames[0] is NULL!\n");
+        return;
+    }
 
-	fprintf(fp, "track: %i\n", gameflow.title_track);
+    fprintf(fp, "Game: %s\n", GF_titlefilenames[0]);
 
-	fprintf(fp, "end:\n");
+    if (gameflow.num_titlefiles <= 1) {
+        fprintf(stderr, "[SCRIPTER] Only 1 title file or less, num_titlefiles=%i\n", gameflow.num_titlefiles);
+    }
 
-	fprintf(fp, "\n");
-	fprintf(fp, "/********************************************************************************************/\n");
-	fprintf(fp, "\n");
+    for (int i = 1; i < gameflow.num_titlefiles; i++) {
+        if (!GF_titlefilenames[i]) {
+            fprintf(stderr, "[SCRIPTER] GF_titlefilenames[%i] is NULL!\n", i);
+            continue;
+        }
+        fprintf(fp, "PCfile: %s\n", GF_titlefilenames[i]);
+    }
+
+    fprintf(fp, "track: %i\n", gameflow.title_track);
 }
 
 static void WriteFrontEndSequence(FILE* fp)
@@ -228,32 +242,57 @@ static void OutputStrings(FILE* fp)
 
 void OutputScript()
 {
-	FILE* fp;
-	long l, lp;
-	char lang[128];
+    printf("[SCRIPTER] OutputScript() start\n");  // <- log iniziale
 
-	fp = fopen("tombpc.txt", "wb");
+    FILE* fp;
+    long l, lp;
+    char lang[128];
 
-	WriteDescription(fp);
-	WriteMainOptions(fp);
-	WriteTitleOptions(fp);
-	WriteFrontEndSequence(fp);
-	WriteGymSequence(fp);
-	WriteLevelSequences(fp);
-	WriteDemoLevelSequences(fp);
+    fp = fopen("tombpc.txt", "wb");
+    if (!fp) {
+        perror("[SCRIPTER] Failed to open tombpc.txt");
+        return;
+    }
 
-	strcpy(lang, LanguageToText(gameflow.language));
-	strcat(lang, ".TXT");
-	l = strlen(lang);
+    printf("[SCRIPTER] Writing Description...\n");
+    WriteDescription(fp);
 
-	for (lp = 0; lp < l; lp++)
-		lang[lp] = tolower(lang[lp]);
+    printf("[SCRIPTER] Writing Main Options...\n");
+    WriteMainOptions(fp);
 
-	fprintf(fp, "Gamestrings: %s\n", lang);
-	fclose(fp);
+    printf("[SCRIPTER] Writing Title Options...\n");
+    WriteTitleOptions(fp);
 
-	fp = fopen(lang, "wb");
-	OutputStrings(fp);
-	fclose(fp);
+    printf("[SCRIPTER] Writing FrontEnd Sequence...\n");
+    WriteFrontEndSequence(fp);
+
+    printf("[SCRIPTER] Writing Gym Sequence...\n");
+    WriteGymSequence(fp);
+
+    printf("[SCRIPTER] Writing Level Sequences...\n");
+    WriteLevelSequences(fp);
+
+    printf("[SCRIPTER] Writing Demo Level Sequences...\n");
+    WriteDemoLevelSequences(fp);
+
+    strcpy(lang, LanguageToText(gameflow.language));
+    strcat(lang, ".TXT");
+    l = strlen(lang);
+    for (lp = 0; lp < l; lp++)
+        lang[lp] = tolower(lang[lp]);
+
+    fprintf(fp, "Gamestrings: %s\n", lang);
+    fclose(fp);
+
+    printf("[SCRIPTER] Writing %s\n", lang);
+    fp = fopen(lang, "wb");
+    if (!fp) {
+        perror("[SCRIPTER] Failed to open language file");
+        return;
+    }
+    OutputStrings(fp);
+    fclose(fp);
+
+    printf("[SCRIPTER] OutputScript() finished\n");
 }
 

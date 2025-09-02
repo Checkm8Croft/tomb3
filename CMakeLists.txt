@@ -4,6 +4,7 @@ project(tomb3)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_definitions(GL_SILENCE_DEPRECATION)
+add_definitions(-D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L)
 
 # Percorsi fissi Homebrew Intel
 include_directories(
@@ -13,12 +14,13 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/tomb3/newstuff
     ${CMAKE_CURRENT_SOURCE_DIR}/tomb3/specific
     ${CMAKE_CURRENT_SOURCE_DIR}/tomb3/3dsystem
+    ${CMAKE_CURRENT_SOURCE_DIR}/tomb3/script
     /usr/local/include
     /usr/local/include/SDL2
 )
 
 link_directories(
-    /usr/local/lib       # forzo lib Homebrew
+    /usr/local/lib
 )
 
 add_definitions(-D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L)
@@ -163,6 +165,13 @@ set(SOURCES
     tomb3/specific/winmain.cpp
 )
 
+# === FONTI SCRIPT ===
+set(SCRIPT_SOURCES
+    tomb3/script/scripter.cpp
+    tomb3/script/interpreter.cpp
+)
+
+# === Tomb3 ===
 add_executable(tomb3 ${SOURCES})
 
 target_link_libraries(tomb3
@@ -183,5 +192,4 @@ if(APPLE)
             "-framework ForceFeedback"
     )
 endif()
-
 

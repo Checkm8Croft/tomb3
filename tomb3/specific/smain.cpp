@@ -434,10 +434,6 @@ printf("Current working directory: %s\n", cwd);
     FadePictureUp(32);
     printf("[16.22] Picture faded up\n");
 
-    printf("[16.23] Waiting...\n");
-    S_Wait(150 * TICKS_PER_FRAME, 1);
-    printf("[16.24] Wait completed\n");
-
     printf("[16.25] Forcing fade down...\n");
     ForceFadeDown(1);
     printf("[16.26] Fade down forced\n");
@@ -447,7 +443,7 @@ printf("Current working directory: %s\n", cwd);
     printf("[16.28] Picture faded down\n");
 
     printf("[16.29] Starting front end sequence...\n");
-    s = GF_DoFrontEndSequence();
+    GF_DoFrontEndSequence();
     printf("[16.30] Front end sequence completed: %ld\n", s);
 
     if (GtWindowClosed) {
