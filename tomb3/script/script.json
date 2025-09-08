@@ -1,0 +1,111 @@
+{
+  "scriptversion": 3,
+  
+  "levels": [
+    {"name": "jungle.tr2", "title": "Jungle", "cut": "cut6.tr2", "music": "34", "key4": "Indra Key"},
+    {"name": "temple.tr2", "title": "Temple Ruins", "cut": "cut9.tr2", "music": "34", "key1": "Key of Ganesha", "key2": "Key of Ganesha", "key3": "Key of Ganesha", "key4": "Key of Ganesha", "puz1": "Scimitar", "puz2": "Scimitar"},
+    {"name": "quadchas.tr2", "title": "The River Ganges", "music": "34", "key1": "Gate Key"},
+    {"name": "tonyboss.tr2", "title": "Caves of Kalyia", "music": "30"},
+    {"name": "shore.tr2", "title": "Costal Village", "cut": "cut1.tr2", "music": "32", "key1": "Smuggler's Key", "puz1": "Serpent Stone"},
+    {"name": "crash.tr2", "title": "Crash Site", "cut": "cut4.tr2", "music": "33", "key1": "Commander Bishop's Key", "key2": "Lt. Tuckerman's Key"},
+    {"name": "rapids.tr2", "title": "Madubu Gorge", "music": "36"},
+    {"name": "triboss.tr2", "title": "Temple of Puna", "music": "30"},
+    {"name": "roofs.tr2", "title": "Thames Wharf", "cut": "cut2.tr2", "music": "73", "key1": "Flue Room Key", "key2": "Cathedral Key"},
+    {"name": "sewer.tr2", "title": "Aldwych", "cut": "cut5.tr2", "music": "74", "key1": "Maintenance Key", "key2": "Solomon's Key", "key3": "Solomon's Key", "key4": "Solomon's Key", "puz1": "Old Penny", "puz2": "Ticket", "puz3": "Masonic Mallet", "puz4": "Ornate Star"},
+    {"name": "tower.tr2", "title": "Lud's Gate", "cut": "cut11.tr2", "music": "71", "key1": "Boiler Room Key", "puz1": "Embalming Fluid"},
+    {"name": "office.tr2", "title": "City", "music": "78"},
+    {"name": "nevada.tr2", "title": "Nevada Desert", "cut": "cut7.tr2", "music": "33", "key1": "Generator Access", "key2": "Detonator Switch"},
+    {"name": "compound.tr2", "title": "High Security Compound", "cut": "cut8.tr2", "music": "27", "key1": "Keycard Type A", "key2": "Keycard Type B", "puz1": "Blue Security Pass", "puz2": "Yellow Security Pass"},
+    {"name": "area51.tr2", "title": "Area 51", "music": "27", "key1": "Launch Code Pass", "puz1": "Tower Access Key", "puz2": "Code Clearance Disk", "puz3": "Code Clearance Disk"},
+    {"name": "antarc.tr2", "title": "Antartica", "cut": "cut3.tr2", "music": "28", "key1": "Hut Key", "puz1": "Crowbar", "puz2": "Gate Control Key"},
+    {"name": "mines.tr2", "title": "RX-Tech Mines", "music": "30", "puz1": "Crowbar", "puz2": "Lead Acid Battery", "puz3": "Winch Starter"},
+    {"name": "city.tr2", "title": "Lost City of Tinnos", "cut": "cut12.tr2", "music": "26", "key1": "Uli Key", "puz1": "Oceanic Mask"},
+    {"name": "chamber.tr2", "title": "Meteorite Cavern", "music": "26"},
+    {"name": "stpaul.tr2", "title": "All Hallows", "music": "30", "key1": "Vault Key"}
+  ],
+
+  "sequences": {
+    "title_sequence": {
+      "type": 1,
+      "seq_type": 1,
+      "commands": [
+        {"opcode": "GFE_PICTURE", "params": {"index": 0}},
+        {"opcode": "GFE_PLAYFMV", "params": {"filename": "INTRO.RPL"}},
+        {"opcode": "GFE_LIST_START"},
+        {"opcode": "GFE_STARTLEVEL", "params": {"level": 0}},
+        {"opcode": "GFE_LIST_END"}
+      ]
+    },
+    
+    "level_complete": {
+      "type": 2,
+      "seq_type": 1,
+      "commands": [
+        {"opcode": "GFE_LEVCOMPLETE"},
+        {"opcode": "GFE_PICTURE", "params": {"index": 1}}
+      ]
+    },
+
+    "game_complete": {
+      "type": 3,
+      "seq_type": 1,
+      "commands": [
+        {"opcode": "GFE_GAMECOMPLETE"},
+        {"opcode": "GFE_PLAYFMV", "params": {"filename": "ENDSEQ.RPL"}}
+      ]
+    },
+
+    "level_1_setup": {
+      "type": 2,
+      "seq_type": 1,
+      "commands": [
+        {"opcode": "GFE_SETTRACK", "params": {"track": 34}},
+        {"opcode": "GFE_NUMSECRETS", "params": {"count": 3}},
+        {"opcode": "GFE_STARTLEVEL", "params": {"level": 1}}
+      ]
+    },
+
+    "level_5_setup": {
+      "type": 2,
+      "seq_type": 1,
+      "commands": [
+        {"opcode": "GFE_SETTRACK", "params": {"track": 32}},
+        {"opcode": "GFE_DEADLY_WATER"},
+        {"opcode": "GFE_NUMSECRETS", "params": {"count": 2}},
+        {"opcode": "GFE_STARTLEVEL", "params": {"level": 5}}
+      ]
+    }
+  },
+
+  "resources": {
+    "pictures": [
+      "title.pcx",
+      "levelcomplete.pcx", 
+      "loading.pcx"
+    ],
+    "fmv_files": [
+      "INTRO.RPL",
+      "HOUSE.RPL", 
+      "ENDSEQ.RPL"
+    ],
+    "cutscenes": [
+      "cut1.tr2",
+      "cut2.tr2",
+      "cut3.tr2",
+      "cut4.tr2",
+      "cut5.tr2",
+      "cut6.tr2",
+      "cut7.tr2",
+      "cut8.tr2",
+      "cut9.tr2",
+      "cut11.tr2",
+      "cut12.tr2"
+    ]
+  },
+
+  "global_settings": {
+    "num_levels": 20,
+    "bonus_enabled": true,
+    "demo_enabled": true
+  }
+}
