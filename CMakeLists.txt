@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_definitions(GL_SILENCE_DEPRECATION)
 add_definitions(-D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L)
 
+
 # Percorsi fissi Homebrew Intel
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/tomb3
@@ -21,6 +22,7 @@ include_directories(
 
 link_directories(
     /usr/local/lib
+    /usr/local/Cellar/json-c/0.18/lib
 )
 
 add_definitions(-D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L)
@@ -179,6 +181,7 @@ target_link_libraries(tomb3
         /usr/local/lib/libSDL2.dylib
         /usr/local/lib/libSDL2_image.dylib
         /usr/local/lib/libSDL2_mixer.dylib
+        ${JSONC_LIBRARIES}
 )
 
 if(APPLE)

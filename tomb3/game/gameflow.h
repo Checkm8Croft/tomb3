@@ -322,5 +322,4 @@ extern short GF_RemoveAmmo;
 extern char GF_StartGame;
 extern char GF_Kill2Complete;
 extern char GF_Playing_Story;
-
 extern short NextAdventure;

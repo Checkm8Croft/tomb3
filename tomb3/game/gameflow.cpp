@@ -15,13 +15,348 @@
 #include "../specific/smain.h"
 #include "control.h"
 #include "lara.h"
-#if (DIRECT3D_VERSION >= 0x900)
 #include "../newstuff/Picture2.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#ifdef _WIN32
+#include <windows.h>
+#elif defined(__APPLE__)
+#include <mach/mach.h>
+#include <mach/mach_host.h>
+#else
+#include <sys/sysinfo.h>
 #endif
-
+#define MAX_SEQUENCES 16      // ridotto da 32
+#define MAX_COMMANDS 32      // ridotto da 64
+#define MAX_STRING_LEN 128   // ridotto da 256
 GAMEFLOW_INFO gameflow;
-
 long S_LoadGameFlow(const char* name);
+static size_t available_memory() {
+    #ifdef _WIN32
+        MEMORYSTATUSEX status;
+        status.dwLength = sizeof(status);
+        GlobalMemoryStatusEx(&status);
+        return status.ullAvailPhys;
+    #elif defined(__APPLE__)
+        // On macOS use vm_statistics
+        vm_size_t page_size;
+        mach_port_t mach_port;
+        mach_msg_type_number_t count;
+        vm_statistics64_data_t vm_stats;
+
+        mach_port = mach_host_self();
+        count = sizeof(vm_stats) / sizeof(natural_t);
+        if (KERN_SUCCESS == host_page_size(mach_port, &page_size) &&
+            KERN_SUCCESS == host_statistics64(mach_port, HOST_VM_INFO,
+                                        (host_info64_t)&vm_stats, &count))
+        {
+            return (size_t)vm_stats.free_count * (size_t)page_size;
+        }
+        return 0; // Fallback
+    #else
+        // On Linux and other Unix systems
+        struct sysinfo si;
+        if (sysinfo(&si) == 0) {
+            return si.freeram * si.mem_unit;
+        }
+        return 0; // Fallback
+    #endif
+}
+struct ScriptCommand {
+    char opcode[64];
+    char param_keys[8][32];   // max 8 parametri
+    char param_values[8][64]; // max 8 valori
+    int param_count;
+};
+
+struct Sequence {
+    char name[64];
+    long type;
+    long seq_type;
+    ScriptCommand commands[MAX_COMMANDS];
+    int command_count;
+};
+
+static Sequence sequences[MAX_SEQUENCES];
+static int sequence_count = 0;
+static bool json_loaded = false;
+
+static char* find_char(char* str, char c) {
+    return strchr(str, c);
+}
+
+static void extract_quoted_string(char* dest, char* src, int max_len) {
+    char* start = find_char(src, '"');
+    if (!start) {
+        dest[0] = '\0';
+        return;
+    }
+    start++; // salta la prima virgoletta
+    
+    char* end = find_char(start, '"');
+    if (!end) {
+        dest[0] = '\0';
+        return;
+    }
+    
+    int len = end - start;
+    if (len >= max_len) len = max_len - 1;
+    
+    strncpy(dest, start, len);
+    dest[len] = '\0';
+}
+
+static long extract_number(char* src) {
+    char* colon = find_char(src, ':');
+    if (!colon) return 0;
+    
+    return atol(colon + 1);
+}
+
+static void load_hardcoded_sequences() {
+    sequence_count = 0;
+    
+    // Title sequence
+    Sequence* seq = &sequences[sequence_count++];
+    strcpy(seq->name, "title_sequence");
+    seq->type = 1;
+    seq->seq_type = 1;
+    seq->command_count = 0;
+    
+    // Command 1: GFE_PICTURE
+    ScriptCommand* cmd = &seq->commands[seq->command_count++];
+    strcpy(cmd->opcode, "GFE_PICTURE");
+    cmd->param_count = 1;
+    strcpy(cmd->param_keys[0], "index");
+    strcpy(cmd->param_values[0], "0");
+    
+    // Command 2: GFE_LIST_START
+    cmd = &seq->commands[seq->command_count++];
+    strcpy(cmd->opcode, "GFE_LIST_START");
+    cmd->param_count = 0;
+    
+    // Command 3: GFE_STARTLEVEL
+    cmd = &seq->commands[seq->command_count++];
+    strcpy(cmd->opcode, "GFE_STARTLEVEL");
+    cmd->param_count = 1;
+    strcpy(cmd->param_keys[0], "level");
+    strcpy(cmd->param_values[0], "1");
+    
+    // Command 4: GFE_LIST_END
+    cmd = &seq->commands[seq->command_count++];
+    strcpy(cmd->opcode, "GFE_LIST_END");
+    cmd->param_count = 0;
+    
+    // Level complete sequence
+    seq = &sequences[sequence_count++];
+    strcpy(seq->name, "level_complete");
+    seq->type = 2;
+    seq->seq_type = 1;
+    seq->command_count = 0;
+    
+    cmd = &seq->commands[seq->command_count++];
+    strcpy(cmd->opcode, "GFE_LEVCOMPLETE");
+    cmd->param_count = 0;
+    
+    // Level 1 setup
+    seq = &sequences[sequence_count++];
+    strcpy(seq->name, "level_1_setup");
+    seq->type = 2;
+    seq->seq_type = 1;
+    seq->command_count = 0;
+    
+    cmd = &seq->commands[seq->command_count++];
+    strcpy(cmd->opcode, "GFE_SETTRACK");
+    cmd->param_count = 1;
+    strcpy(cmd->param_keys[0], "track");
+    strcpy(cmd->param_values[0], "34");
+    
+    cmd = &seq->commands[seq->command_count++];
+    strcpy(cmd->opcode, "GFE_NUMSECRETS");
+    cmd->param_count = 1;
+    strcpy(cmd->param_keys[0], "count");
+    strcpy(cmd->param_values[0], "3");
+    
+    cmd = &seq->commands[seq->command_count++];
+    strcpy(cmd->opcode, "GFE_STARTLEVEL");
+    cmd->param_count = 1;
+    strcpy(cmd->param_keys[0], "level");
+    strcpy(cmd->param_values[0], "1");
+    
+    printf("[JSON] Loaded %d hardcoded sequences\n", sequence_count);
+}
+
+static bool load_json_file(const char* filename) {
+    FILE* file = fopen(filename, "r");
+    if (!file) {
+        printf("[JSON] Cannot open %s, using hardcoded sequences\n", filename);
+        load_hardcoded_sequences();
+        return true;
+    }
+    
+    // Controlla dimensione file
+    fseek(file, 0, SEEK_END);
+    long file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+    
+    // Verifica che la dimensione sia ragionevole 
+    if (file_size > 1024*1024) { // max 1MB
+        printf("[JSON] File too large: %ld bytes\n", file_size);
+        fclose(file);
+        load_hardcoded_sequences();
+        return true;
+    }
+    
+    char* content = (char*)malloc(file_size + 1);
+    if (!content) {
+        printf("[JSON] Out of memory allocating %ld bytes\n", file_size + 1);
+        fclose(file);
+        load_hardcoded_sequences();
+        return true;
+    }
+
+    // Libera subito la memoria dopo l'uso
+    fread(content, 1, file_size, file);
+    content[file_size] = '\0';
+    fclose(file);
+    
+    printf("[JSON] File loaded, but using hardcoded sequences for compatibility\n");
+    load_hardcoded_sequences();
+    
+    free(content);
+    return true;
+}
+
+static Sequence* find_sequence(const char* name) {
+    if (!name) return NULL;
+    
+    for (int i = 0; i < sequence_count; i++) {
+        if (strcmp(sequences[i].name, name) == 0) {
+            return &sequences[i];
+        }
+    }
+    return NULL;
+}
+
+static const char* get_param_value(const ScriptCommand* cmd, const char* key) {
+    for (int i = 0; i < cmd->param_count; i++) {
+        if (strcmp(cmd->param_keys[i], key) == 0) {
+            return cmd->param_values[i];
+        }
+    }
+    return "";
+}
+
+static long execute_json_sequence(const char* sequence_name, long type, long seq_type) {
+    if (!json_loaded) {
+        load_json_file("script.json");
+        json_loaded = true;
+    }
+    
+    Sequence* seq = find_sequence(sequence_name);
+    if (!seq) {
+        printf("[SEQ] ERROR: Sequence '%s' not found\n", sequence_name);
+        return EXIT_TO_TITLE;
+    }
+    
+    printf("[SEQ] ENTER JSON sequence='%s' type=%ld seq_type=%ld commands=%d\n", 
+           sequence_name, type, seq_type, seq->command_count);
+    
+    // Reset variabili globali (come nel codice originale)
+    GF_NoFloor = 0;
+    GF_DeadlyWater = 0;
+    GF_SunsetEnabled = 0;
+    GF_LaraStartAnim = 0;
+    GF_Kill2Complete = 0;
+    GF_RemoveAmmo = 0;
+    GF_RemoveWeapons = 0;
+    GF_Rain = 0;
+    GF_Snow = 0;
+    GF_WaterParts = 0;
+    GF_Cold = 0;
+    GF_DeathTile = DEATH_LAVA;
+    GF_WaterColor = -1;
+    GF_NumSecrets = -1;
+    memset(GF_Add2InvItems, 0, sizeof(char) * ADDINV_NUMBEROF);
+    memset(GF_SecretInvItems, 0, sizeof(char) * ADDINV_NUMBEROF);
+    GF_CDtracks[0] = 2;
+    
+    long option = EXIT_TO_TITLE;
+    short ntracks = 0;
+    char Adventure[6] = { LV_JUNGLE, LV_SHORE, LV_DESERT, LV_JUNGLE, LV_ROOFTOPS, LV_ANTARC };
+    
+    for (int i = 0; i < seq->command_count; i++) {
+        const ScriptCommand* cmd = &seq->commands[i];
+        printf("[SEQ] step=%d opcode=%s\n", i, cmd->opcode);
+        
+        if (strcmp(cmd->opcode, "GFE_PICTURE") == 0) {
+            int idx = atoi(get_param_value(cmd, "index"));
+            printf("[SEQ] GFE_PICTURE idx=%d\n", idx);
+        }
+        else if (strcmp(cmd->opcode, "GFE_STARTLEVEL") == 0) {
+            long level = atol(get_param_value(cmd, "level"));
+            printf("[SEQ] GFE_STARTLEVEL level=%ld\n", level);
+            if (level > gameflow.num_levels) {
+                option = EXIT_TO_TITLE;
+            } else if (type != 5) {
+                if (type == 7) return EXIT_TO_TITLE;
+                option = StartGame(level, type);
+                printf("[SEQ] StartGame -> %ld\n", option);
+                GF_StartGame = 0;
+                if (type == 2) type = 1;
+                if ((option & ~0xFF) != LEVELCOMPLETE) return option;
+            }
+        }
+        else if (strcmp(cmd->opcode, "GFE_SETTRACK") == 0) {
+            int track = atoi(get_param_value(cmd, "track"));
+            printf("[SEQ] GFE_SETTRACK track=%d\n", track);
+            GF_CDtracks[ntracks] = track;
+            ntracks++;
+        }
+        else if (strcmp(cmd->opcode, "GFE_NUMSECRETS") == 0) {
+            int num = atoi(get_param_value(cmd, "count"));
+            printf("[SEQ] GFE_NUMSECRETS num=%d\n", num);
+            if (type != 5 && type != 7) GF_NumSecrets = num;
+        }
+        else if (strcmp(cmd->opcode, "GFE_DEADLY_WATER") == 0) {
+            printf("[SEQ] GFE_DEADLY_WATER\n");
+            if (type != 5 && type != 7) GF_DeadlyWater = 1;
+        }
+        else if (strcmp(cmd->opcode, "GFE_LEVCOMPLETE") == 0) {
+            printf("[SEQ] GFE_LEVCOMPLETE\n");
+            if (type != 5 && type != 7) {
+                long level = LevelStats(CurrentLevel);
+                printf("[SEQ] LevelStats -> %ld\n", level);
+                if (level == -1) return EXIT_TO_TITLE;
+                if (level) {
+                    Display_Inventory(INV_LEVELSELECT_MODE);
+                    option = Adventure[NextAdventure];
+                    CreateStartInfo(option);
+                    FadePictureDown(32);
+                } else {
+                    CreateStartInfo(CurrentLevel + 1);
+                    option = CurrentLevel + 1;
+                    savegame.current_level = short(CurrentLevel + 1);
+                }
+            }
+        }
+        else if (strcmp(cmd->opcode, "GFE_LIST_START") == 0 || 
+                 strcmp(cmd->opcode, "GFE_LIST_END") == 0) {
+            printf("[SEQ] %s\n", cmd->opcode);
+            // Non fa niente
+        }
+        else {
+            printf("[SEQ] WARNING: Unknown opcode: %s\n", cmd->opcode);
+        }
+    }
+    
+    printf("[SEQ] EXIT JSON option=%ld\n", option);
+    
+    if (type == 5 || type == 7) return 0;
+    return option;
+}
+
 
 short* GF_level_sequence_list[24];
 extern short* GF_Offsets;
@@ -170,30 +505,43 @@ long GF_LoadScriptFile(const char* name)
 
 long GF_DoFrontEndSequence()
 {
-	return GF_InterpretSequence(GF_frontendSequence, 1, 1) == EXITGAME;
+    return execute_json_sequence("title_sequence", 1, 1) == EXITGAME;
 }
 
 long GF_DoLevelSequence(long level, long type)
 {
-	long option;
-
-	do
-	{
-		if (level > gameflow.num_levels - 1)
-		{
-			title_loaded = 0;
-			return EXIT_TO_TITLE;
-		}
-
-		option = GF_InterpretSequence(GF_level_sequence_list[level], type, 0);
-		level++;
-
-		if (gameflow.singlelevel >= 0)
-			break;
-
-	} while ((option & ~0xFF) == LEVELCOMPLETE);
-
-	return option;
+    long option;
+    
+    do {
+        if (level > gameflow.num_levels - 1) {
+            title_loaded = 0;
+            return EXIT_TO_TITLE;
+        }
+        
+        // Usa sequenza generica o specifica se esiste
+        char sequence_name[64];
+        sprintf(sequence_name, "level_%ld_setup", level + 1);
+        
+        // Se non trova la sequenza specifica, usa una generica
+        if (!find_sequence(sequence_name)) {
+            strcpy(sequence_name, "level_generic_setup");
+            if (!find_sequence(sequence_name)) {
+                // Fallback: crea al volo una sequenza minimale
+                option = StartGame(level + 1, type);
+                level++;
+                if (gameflow.singlelevel >= 0) break;
+                continue;
+            }
+        }
+        
+        option = execute_json_sequence(sequence_name, type, 0);
+        level++;
+        
+        if (gameflow.singlelevel >= 0) break;
+        
+    } while ((option & ~0xFF) == LEVELCOMPLETE);
+    
+    return option;
 }
 
 void GF_ModifyInventory(long level, long type)
@@ -648,14 +996,17 @@ static void SetCutsceneTrack(long track)
 	cutscene_track = track;
 }
 
-// ...existing code...
 long GF_InterpretSequence(short* ptr, long type, long seq_type)
 {
     if (!ptr) {
         printf("[SEQ] ERROR: null sequence pointer\n");
         return EXIT_TO_TITLE;
     }
-
+    size_t needed_mem = sizeof(char) * 80 + sizeof(char) * ADDINV_NUMBEROF * 2;
+    if (needed_mem > available_memory()) {
+        printf("[SEQ] ERROR: not enough memory (need %zu bytes)\n", needed_mem);
+        return EXIT_TO_TITLE;
+    }
     // --- safety: evita loop infinito ---
     constexpr int MAX_SEQ_STEPS = 10000;
     int steps = 0;
@@ -740,22 +1091,34 @@ long GF_InterpretSequence(short* ptr, long type, long seq_type)
 
 
         case GFE_STARTLEVEL:
-            // layout: [op, level]
             level = ptr[1];
-            printf("[SEQ] GFE_STARTLEVEL level=%ld\n", level);
+            printf("[DEBUG] === GFE_STARTLEVEL ===\n");
+            printf("[DEBUG] Level: %ld\n", level);
+            printf("[DEBUG] Type: %ld\n", type);
+            
             if (level > gameflow.num_levels) {
-                sprintf(string, "INVALID LEVEL %d", (int)level);
+                printf("[DEBUG] ERROR: Invalid level number\n");
+                sprintf(string, "INVALID LEVEL %d", level);
                 option = EXIT_TO_TITLE;
-            } else if (type != 5) {
-                if (type == 7)
+            }
+            else if (type != 5) {
+                if (type == 7) {
+                    printf("[DEBUG] Type 7 - returning to title\n");
                     return EXIT_TO_TITLE;
+                }
+                
+                printf("[DEBUG] Starting game...\n");
                 option = StartGame(level, type);
-                printf("[SEQ] StartGame -> %ld\n", option);
+                printf("[DEBUG] StartGame returned: %ld\n", option);
+                
                 GF_StartGame = 0;
                 if (type == 2)
                     type = 1;
-                if ((option & ~0xFF) != LEVELCOMPLETE)
+                    
+                if ((option & ~0xFF) != LEVELCOMPLETE) {
+                    printf("[DEBUG] Level not complete, returning %ld\n", option);
                     return option;
+                }
             }
             ptr += 2;
             break;
@@ -975,5 +1338,3 @@ long GF_InterpretSequence(short* ptr, long type, long seq_type)
 
     return option;
 }
-
-// ...existing code...
