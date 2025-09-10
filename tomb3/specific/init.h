@@ -1,6 +1,8 @@
 #pragma once
 #include "../global/types.h"
 
+#define POOL_SIZE (4 * 2048 * 2048)
+
 void ShutdownGame();
 void CalculateWibbleTable();
 ushort GetRandom(WATERTAB* wt, long lp);
@@ -11,8 +13,7 @@ void game_free(long size);
 long S_InitialiseSystem();
 
 extern char* malloc_ptr;
-extern char* malloc_buffer;
-
+static char malloc_buffer[POOL_SIZE];
 typedef unsigned long ulong;
 
 

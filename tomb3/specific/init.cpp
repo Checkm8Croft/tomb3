@@ -19,11 +19,9 @@
 #include "hwrender.h"
 
 char* malloc_ptr;
-char* malloc_buffer;
 static long malloc_free;
-static long malloc_size;
+long malloc_size = POOL_SIZE;
 static long malloc_used;
-
 // Sostituisci D3DTLVERTEX con GLVERTEX per OpenGL
 GLVERTEX* CurrentTLVertex;
 GLVERTEX* VertexBuffer;
@@ -152,13 +150,11 @@ void init_water_table()
 	}
 }
 
-void init_game_malloc()
-{
-	malloc_ptr = malloc_buffer;
-	malloc_free = malloc_size;
-	malloc_used = 0;
+void init_game_malloc() {
+    malloc_ptr = malloc_buffer;
+    malloc_free = malloc_size;
+    malloc_used = 0;
 }
-
 void* game_malloc(long size)
 {
 	void* ptr;

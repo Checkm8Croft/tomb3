@@ -399,8 +399,7 @@ printf("Current working directory: %s\n", cwd);
 
     HiResFlag = -1;
     printf("[16.12] Allocating memory...\n");
-    malloc_buffer = (char*)malloc(MALLOC_SIZE);
-
+	malloc_ptr = malloc_buffer;
     if (!malloc_buffer)
     {
         printf("[16.13] Memory allocation failed\n");
