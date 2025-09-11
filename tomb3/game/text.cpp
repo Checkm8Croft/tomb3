@@ -52,13 +52,27 @@ short T_GetStringLen(const char* string)
 
 long T_RemovePrint(TEXTSTRING* string)
 {
-	if (!string || !(string->flags & T_ACTIVE))
-		return 0;
+    if (!string) {
+        printf("T_RemovePrint: called with string = NULL!\n");
+        return 0;
+    }
 
-	string->flags &= ~T_ACTIVE;
-	T_numStrings--;
-	return 1;
+    // aggiungi un controllo su indirizzi sospetti
+    if ((uintptr_t)string < 0x1000) {
+        printf("T_RemovePrint: pointer invalid %p\n", string);
+        return 0;
+    }
+
+    if (!(string->flags & T_ACTIVE)) {
+        printf("T_RemovePrint: string %p not active\n", string);
+        return 0;
+    }
+
+    string->flags &= ~T_ACTIVE;
+    T_numStrings--;
+    return 1;
 }
+
 
 void T_BottomAlign(TEXTSTRING* string, short flag)
 {

@@ -30,6 +30,7 @@ bool LoadPicture(const char* name, GLuint* textureID, int* width, int* height);
 long HiResFlag;
 long title_loaded;
 char exit_message[128];
+char* malloc_buffer = nullptr;
 long s = 0;
 long lp = 0; 
 long level = 0;

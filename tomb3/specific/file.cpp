@@ -65,10 +65,6 @@ void* GlobalAlloc(int flags, size_t size)
     return malloc(size);
 }
 
-void GlobalFree(void* ptr)
-{
-    free(ptr);
-}
 
 const char* GetFullPath(const char* name){
     static char fullPath[1024];

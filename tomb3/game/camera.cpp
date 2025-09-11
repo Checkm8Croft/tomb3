@@ -12,9 +12,9 @@
 #include "inventry.h"
 #include "../tomb3/tomb3.h"
 #include "../newstuff/LaraDraw.h"
+#include "game.h"
 
 CAMERA_INFO camera;
-
 GAME_VECTOR ForcedFixedCamera;
 char UseForcedFixedCamera;
 
@@ -25,38 +25,43 @@ static GAME_VECTOR static_lookcamp;
 static GAME_VECTOR static_lookcamt;
 static PHD_VECTOR old_target;
 static char camerasnaps;
-
 void InitialiseCamera()
 {
-	camera.shift = lara_item->pos.y_pos - 1024;
-	last_target.x = lara_item->pos.x_pos;
-	last_target.y = camera.shift;
-	last_target.z = lara_item->pos.z_pos;
-	last_target.room_number = lara_item->room_number;
-	camera.target.x = last_target.x;
-	camera.target.y = camera.shift;
-	camera.target.z = last_target.z;
-	camera.target.room_number = last_target.room_number;
-	camera.pos.x = last_target.x;
-	camera.pos.y = camera.shift;
-	camera.pos.z = last_target.z - 100;
-	camera.pos.room_number = last_target.room_number;
-	camera.target_distance = 1536;
-	camera.item = 0;
-	camera.number_frames = 1;
+    if (!lara_item) {
+        fprintf(stderr, "ERROR: lara_item non inizializzato!\n");
+        return;
+    }
 
-	if (!lara.extra_anim)
-		camera.type = CHASE_CAMERA;
+    camera.shift = lara_item->pos.y_pos - 1024;
+    last_target.x = lara_item->pos.x_pos;
+    last_target.y = camera.shift;
+    last_target.z = lara_item->pos.z_pos;
+    last_target.room_number = lara_item->room_number;
 
-	camera.speed = 1;
-	camera.flags = 0;
-	camera.bounce = 0;
-	camera.number = -1;
-	camera.fixed_camera = 0;
-	AlterFOV(14560);
-	UseForcedFixedCamera = 0;
-	CalculateCamera();
+    camera.target = last_target;
+    camera.pos.x = last_target.x;
+    camera.pos.y = camera.shift;
+    camera.pos.z = last_target.z - 100;
+    camera.pos.room_number = last_target.room_number;
+
+    camera.target_distance = 1536;
+    camera.item = nullptr;
+    camera.number_frames = 1;
+
+    if (!lara.extra_anim)
+        camera.type = CHASE_CAMERA;
+
+    camera.speed = 1;
+    camera.flags = 0;
+    camera.bounce = 0;
+    camera.number = -1;
+    camera.fixed_camera = 0;
+
+    AlterFOV(14560);
+    UseForcedFixedCamera = 0;
+    CalculateCamera();
 }
+
 
 long mgLOS(GAME_VECTOR* start, GAME_VECTOR* target, long push)
 {

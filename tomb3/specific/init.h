@@ -11,12 +11,13 @@ void init_game_malloc();
 void* game_malloc(long size);
 void game_free(long size);
 long S_InitialiseSystem();
+void GlobalFree(void* ptr);  // dichiarazione solo
 
+// dichiarazioni globali
 extern char* malloc_ptr;
-static char malloc_buffer[POOL_SIZE];
-typedef unsigned long ulong;
-
-
+extern char* malloc_buffer;
+extern long malloc_free;
+extern long malloc_used;
 
 extern GLVERTEX* CurrentGLVertex;
 extern GLVERTEX* VertexBuffer;
