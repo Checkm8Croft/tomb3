@@ -93,7 +93,7 @@
 #include "footprnt.h"
 #include "../newstuff/map.h"
 #include "../tomb3/tomb3.h"
-
+extern short next_item_free;
 short IsRoomOutsideNo;
 char* OutsideRoomTable;
 short OutsideRoomOffsets[729];
@@ -230,7 +230,7 @@ static long DoLevelLoad(long level, long type)
 long InitialiseLevel(long level, long type)
 {
 	ITEM_INFO* item;
-
+	extern short next_item_free;  // AGGIUNGI QUESTA LINEA
 	IsAtmospherePlaying = 0;
 
 	if (type && type != 4)
@@ -243,13 +243,49 @@ long InitialiseLevel(long level, long type)
 
 	InitialiseGameFlags();
 	lara.item_number = NO_ITEM;
+	InitItemSystem();
+	// AGGIUNGI QUESTO CONTROLLO D'EMERGENZA QUI!
+	if (!items) {
+		printf("EMERGENCY: items is NULL! Allocating emergency items...\n");
+		items = (ITEM_INFO*)malloc(sizeof(ITEM_INFO) * 2048);
+		
+		if (!items) {
+			printf("FATAL: Cannot allocate emergency items!\n");
+			return 0;
+		}
+		
+		// Inizializza la linked list
+		for (int i = 0; i < 2047; i++) {
+			items[i].next_item = i + 1;
+		}
+		items[2047].next_item = NO_ITEM;
+		next_item_free = 0;
+		
+		printf("Emergency items allocated at: %p\n", items);
+	}
+	
+	lara_item = &items[lara.item_number];  // ← QUESTA LINEA USA items, DEVE ESSERE DOPO L'ALLOCAZIONE
 	title_loaded = 0;
 
 	if (!DoLevelLoad(level, type))
 		return 0;
 
+	// 1. Crea un item per Lara
+	lara.item_number = CreateItem();
+
+	// 2. Controlla che sia valido
 	if (lara.item_number != NO_ITEM)
-		InitialiseLara(type);
+	{
+	    // 3. Puntatore globale valido
+    lara_item = &items[lara.item_number];  
+
+    // 4. Inizializza Lara
+    InitialiseLara(type);                 
+
+    // 5. Inizializza la camera solo ora
+    InitialiseCamera();                    
+}
+
 
 	if (type == 1 || type == 2 || type == 3)
 	{

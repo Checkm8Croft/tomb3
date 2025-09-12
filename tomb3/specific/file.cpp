@@ -577,7 +577,21 @@ long LoadAnimatedTextures(HANDLE file)
 	AdjustTextureUVs(1);
 	return 1;
 }
-
+void AllocateItemsArray()
+{
+	if (!items) {
+		printf("Allocating items array...\n");
+		items = (ITEM_INFO*)game_malloc(sizeof(ITEM_INFO) * MAX_ITEMS);
+		printf("items allocated at: %p\n", items);
+		
+		if (!items) {
+			lstrcpy(exit_message, "Failed to allocate items array!");
+			exit(1);
+		}
+		
+		InitialiseItemArray(MAX_ITEMS);
+	}
+}
 long LoadItems(HANDLE file)
 {
 	ITEM_INFO* item;
@@ -595,7 +609,9 @@ long LoadItems(HANDLE file)
 		return 0;
 	}
 
+	printf("Allocating items...\n");
 	items = (ITEM_INFO*)game_malloc(sizeof(ITEM_INFO) * MAX_ITEMS);
+	printf("items allocated at: %p\n", items);
 
 	if (!items)
 	{
@@ -604,6 +620,7 @@ long LoadItems(HANDLE file)
 	}
 
 	level_items = num;
+	
 	InitialiseItemArray(MAX_ITEMS);
 
 	for (int i = 0; i < level_items; i++)

@@ -1,6 +1,7 @@
 #pragma once
 #include "../global/types.h"
 
+void InitItemSystem();
 void InitialiseItemArray(short num_items);
 void KillItem(short item_num);
 short CreateItem();

@@ -8,14 +8,25 @@
 #include "lara.h"
 #include "effects.h"
 #include "../newstuff/map.h"
-
+#include "../specific/init.h"
 short next_item_active;
-static short next_item_free;
+short next_item_free;
 short next_fx_active;
 static short next_fx_free;
 
 short body_bag;
-
+void InitItemSystem()
+{
+    if (!items) {
+        items = (ITEM_INFO*)game_malloc(sizeof(ITEM_INFO) * MAX_ITEMS);
+        // Inizializza next_item_free
+        next_item_free = 0;
+        for (int i = 0; i < MAX_ITEMS - 1; i++) {
+            items[i].next_item = i + 1;
+        }
+        items[MAX_ITEMS - 1].next_item = NO_ITEM;
+    }
+}
 void InitialiseItemArray(short num_items)
 {
 	ITEM_INFO* item;
@@ -93,9 +104,28 @@ void KillItem(short item_num)
 
 short CreateItem()
 {
-	short item_number;
+	// AGGIUNGI QUESTO CONTROLLO DI SICUREZZA
+	if (!items) {
+		printf("CRITICAL: items is NULL in CreateItem! Allocating emergency...\n");
+		items = (ITEM_INFO*)malloc(sizeof(ITEM_INFO) * 2048);
+		
+		if (!items) {
+			printf("FATAL: Emergency allocation failed!\n");
+			return NO_ITEM;
+		}
+		
+		next_item_free = 0;
+		printf("Emergency items allocated at: %p\n", items);
+	}
 
+	short item_number;
 	item_number = next_item_free;
+
+	// Aggiungi anche controllo bounds
+	if (item_number < 0 || item_number >= 2048) {
+		printf("WARNING: next_item_free out of bounds: %d\n", item_number);
+		return NO_ITEM;
+	}
 
 	if (item_number != NO_ITEM)
 	{
@@ -103,10 +133,9 @@ short CreateItem()
 		items[item_number].il.init = 0;
 		next_item_free = items[item_number].next_item;
 	}
-
+	
 	return item_number;
 }
-
 void InitialiseItem(short item_num)
 {
 	ITEM_INFO* item;

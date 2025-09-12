@@ -28,7 +28,7 @@ static char camerasnaps;
 void InitialiseCamera()
 {
     if (!lara_item) {
-        fprintf(stderr, "ERROR: lara_item non inizializzato!\n");
+        fprintf(stderr, "ERROR: lara_item not initialized!\n");
         return;
     }
 
