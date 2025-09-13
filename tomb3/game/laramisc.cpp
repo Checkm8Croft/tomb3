@@ -1073,60 +1073,75 @@ void InitialiseLaraLoad(short item_number)
 
 void InitialiseLara(long type)
 {
+	printf("InitialiseLara called, lara_item: %p\n", lara_item);
+	if (!lara_item) {
+        printf("CRITICAL: lara_item is NULL in InitialiseLara!\n");
+        return;
+    }
+	printf("lara_item->object_number: %d\n", lara_item->object_number);
+    printf("lara_item->room_number: %d\n", lara_item->room_number);
+    printf("items array: %p\n", items);
+    printf("lara struct: %p\n", &lara);
+
 	ITEM_INFO* item;
 	short* tmp;
 
 	item = lara_item;
+	if (!item) {
+		printf("FATAL: item is NULL after assignment!\n");
+		return;
+	}
+	printf("Setting item->data to lara struct...\n");
 	item->collidable = 0;
 	item->data = &lara;
+	printf("item->data set to: %p\n", item->data);
 	item->hit_points = 1000;
-
-	lara.hit_direction = -1;
-	lara.skidoo = NO_ITEM;
-	lara.weapon_item = NO_ITEM;
-	lara.flare_control_left = 0;
-	lara.flare_control_right = 0;
-	lara.extra_anim = 0;
-	lara.look = 1;
-	lara.burn = 0;
-	lara.BurnGreen = 0;
-	lara.calc_fallspeed = 0;
-	lara.climb_status = 0;
-	lara.pose_count = 0;
-	lara.hit_frame = 0;
-	lara.air = 1800;
-	lara.dive_count = 0;
-	lara.death_count = 0;
-	lara.current_active = 0;
-	lara.spaz_effect_count = 0;
-	lara.flare_age = 0;
-	lara.back_gun = 0;
-	lara.flare_frame = 0;
-	lara.water_surface_dist = 100;
-	lara.last_pos.x = item->pos.x_pos;
-	lara.last_pos.y = item->pos.y_pos;
-	lara.last_pos.z = item->pos.z_pos;
-	lara.spaz_effect = 0;
-	lara.mesh_effects = 0;
-	lara.target = 0;
-	lara.turn_rate = 0;
-	lara.move_angle = 0;
-	lara.head_x_rot = 0;
-	lara.head_y_rot = 0;
-	lara.head_z_rot = 0;
-	lara.torso_x_rot = 0;
-	lara.torso_y_rot = 0;
-	lara.torso_z_rot = 0;
-	lara.right_arm.flash_gun = 0;
-	lara.left_arm.flash_gun = 0;
-	lara.right_arm.lock = 0;
-	lara.left_arm.lock = 0;
-	lara.poisoned = 0;
-	lara.creature = 0;
-	lara.electric = 0;
-
+	// QUESTE OPERAZIONI CAUSANO IL CRASH:
+lara.hit_direction = -1;
+lara.skidoo = NO_ITEM;
+lara.weapon_item = NO_ITEM;
+lara.flare_control_left = 0;
+lara.flare_control_right = 0;
+lara.extra_anim = 0;
+lara.look = 1;
+lara.burn = 0;
+lara.BurnGreen = 0;
+lara.calc_fallspeed = 0;
+lara.climb_status = 0;
+lara.pose_count = 0;
+lara.hit_frame = 0;
+lara.air = 1800;
+lara.dive_count = 0;
+lara.death_count = 0;
+lara.current_active = 0;
+lara.spaz_effect_count = 0;
+lara.flare_age = 0;
+lara.back_gun = 0;
+lara.flare_frame = 0;
+lara.water_surface_dist = 100;
+lara.spaz_effect = 0;
+lara.mesh_effects = 0;
+lara.target = 0;
+lara.turn_rate = 0;
+lara.move_angle = 0;
+lara.head_x_rot = 0;
+lara.head_y_rot = 0;
+lara.head_z_rot = 0;
+lara.torso_x_rot = 0;
+lara.torso_y_rot = 0;
+lara.torso_z_rot = 0;
+lara.right_arm.flash_gun = 0;
+lara.left_arm.flash_gun = 0;
+lara.right_arm.lock = 0;
+lara.left_arm.lock = 0;
+lara.poisoned = 0;
+lara.creature = 0;
+lara.electric = 0;
+	printf("lara struct initialised\n");
 	if (type == 1 && GF_LaraStartAnim)
 	{
+		printf("Processing type 1 (start animation)...\n");
+		printf("GF_LaraStartAnim: %d\n", GF_LaraStartAnim);
 		lara.gun_status = LG_HANDSBUSY;
 		lara.water_status = LARA_ABOVEWATER;
 		item->anim_number = objects[LARA_EXTRA].anim_index;
@@ -1141,6 +1156,8 @@ void InitialiseLara(long type)
 	}
 	else if (room[item->room_number].flags & ROOM_UNDERWATER)
 	{
+		printf("Processing underwater start...\n");
+		printf("room[%d].flags: %d\n", item->room_number, room[item->room_number].flags);
 		lara.water_status = LARA_UNDERWATER;
 		item->fallspeed = 0;
 		item->anim_number = ANIM_TREAD;
@@ -1150,17 +1167,26 @@ void InitialiseLara(long type)
 	}
 	else
 	{
+		printf("Processing above water start...\n");
 		lara.water_status = LARA_ABOVEWATER;
 		item->anim_number = ANIM_STOP;
 		item->frame_number = anims[ANIM_STOP].frame_base;
 		item->current_anim_state = AS_STOP;
 		item->goal_anim_state = AS_STOP;
 	}
-
+    printf("Reached mesh operations, type: %d\n", type);
 	if (type == 4)
 	{
+		printf("Processing type 4 (skin mesh swap)...\n");
+        printf("objects[LARA].mesh_index: %d\n", objects[LARA].mesh_index);
+        printf("objects[LARA_SKIN].mesh_index: %d\n", objects[LARA_SKIN].mesh_index);
+        printf("meshes array: %p\n", meshes);
 		for (int i = 0; i < 15; i++)
 		{
+			if (!meshes || objects[LARA].mesh_index + i < 0 || objects[LARA_SKIN].mesh_index + i < 0) {
+                printf("ERROR: Invalid mesh indices!\n");
+                break;
+            }
 			meshes[objects[LARA].mesh_index + i] = meshes[objects[LARA_SKIN].mesh_index + i];
 			lara.mesh_ptrs[i] = meshes[objects[LARA].mesh_index + i];
 		}
@@ -1178,8 +1204,15 @@ void InitialiseLara(long type)
 	else
 		InitialiseLaraInventory(CurrentLevel);
 
-	DashTimer = 120;
-	ExposureMeter = 600;
+	printf("lara struct initialised\n");
+	printf("Setting DashTimer...\n");
+DashTimer = 120;
+printf("DashTimer set to: %d\n", DashTimer);
+
+printf("Setting ExposureMeter...\n");
+ExposureMeter = 600;
+printf("ExposureMeter set to: %d\n", ExposureMeter);
+	printf("InitialiseLara completed successfully!\n");
 }
 
 void InitialiseLaraInventory(long level)

@@ -1,6 +1,10 @@
 # tomb3 in gl
 ## Tomb Raider 3 from DirectX to OpenGL porting project
 
+# NOTE
+
+I currently stop this project, beacuse I'm tired of seeing errors and no progresses. But I'll not cancel it. Pull Requests are accepted here, if you'd like to help me
+
 ## DISCLAIMER
 This is just a fork of Troye's tomb3, with all games files ported with AI with minimal OpenGL/SDL2 definitions
 

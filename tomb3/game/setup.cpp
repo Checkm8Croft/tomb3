@@ -272,15 +272,25 @@ long InitialiseLevel(long level, long type)
 
 	// 1. Crea un item per Lara
 	lara.item_number = CreateItem();
-
+	printf("Lara item number: %d\n", lara.item_number);
 	// 2. Controlla che sia valido
 	if (lara.item_number != NO_ITEM)
-	{
-	    // 3. Puntatore globale valido
+{
+    // 3. Puntatore globale valido
     lara_item = &items[lara.item_number];  
-
+    printf("lara_item set to: %p (item number: %d)\n", lara_item, lara.item_number);
+    if (lara_item < items || lara_item >= items + MAX_ITEMS) {
+        printf("ERROR: lara_item out of bounds!\n");
+        return 0;
+    }
+	printf("lara_item validity check: %p, items range: %p - %p\n", 
+       lara_item, items, items + MAX_ITEMS);
+	if (lara_item < items || lara_item >= items + MAX_ITEMS) {
+    printf("ERROR: lara_item is outside items array bounds!\n");
+    return 0;
+}
     // 4. Inizializza Lara
-    InitialiseLara(type);                 
+    InitialiseLara(type);            
 
     // 5. Inizializza la camera solo ora
     InitialiseCamera();                    
